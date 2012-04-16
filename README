@@ -1,0 +1,52 @@
+Player-Tracker
+Keeps track of all your players using mySQL or SQLite, and optionally connects to the two largest global ban databases.
+
+Features:
+
+    * Discover alternate accounts by IP-matching with a single command.
+    * Keep track of all the IP addresses a Player connects from, for easier & more complete bans.
+    * Immediately identify alts of banned players.
+    * Receive on-Join notifications about how many alts a player has been associated with.
+    * Easy setup: drag, drop, and go, or fine tune your configuration.
+    * Wildcard search matching, even with offline players!
+    * Don't want MCBans/MCBouncer managing your bans? This plugin can allow you to look up any player on these two systems without relying on their plugins!
+    * Hide certain players from lookups (Admins, VIPs, whatever) to avoid having their alts discovered!
+    * Check out the screenshots page for examples! http://dev.bukkit.org/server-mods/player-tracker/pages/screenshots/
+
+Installation:
+
+    1 Drag Player-Tracker.jar into your plugins directory, and run. Further configuration only necessary if you want to use mySQL, MCBans, or MCBouncer integration.
+    2 That's it.
+
+Commands:
+
+    * /track [-ai] <PLAYERNAME or IP ADDRESS or "stats">
+    Shows all the accounts associated with a given IP or player. (-i will display all associated IPs as well, -a disables wildcard searching) /track stats will show the number of tracked accounts & IPs.
+
+Permisson node: playertracker.track
+
+    * /hidetracks <PLAYERNAME or "list">
+    Adds a given player to the list of players immune to lookups, or lists hidden players.
+
+Permission node: playertracker.hidetracks
+
+    * /unhidetracks <PLAYERNAME>
+    Removes a given player from the list of players immune to lookups.
+
+Permission node: playertracker.hidetracks
+
+Configuration
+Check out the Configuration Page. http://dev.bukkit.org/server-mods/player-tracker/pages/configuration/
+
+Permissions
+Check out the Permissions Page. http://dev.bukkit.org/server-mods/player-tracker/pages/permissions/
+
+Planned Improvements:
+
+    * Web-script (php) lookup for mySQL users.
+    * Hooks with FigAdmin, Banhammer, and Vanilla bans to show banned alt accounts.
+    * Automatic database size limiting.
+    * Approximate IP geolocation?
+    * Enable sending of global bans?
+
+Under development for SoftSlayer.com.

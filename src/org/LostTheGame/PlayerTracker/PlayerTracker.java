@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.LostTheGame.PlayerTracker.Banlists.Banlist;
+import org.LostTheGame.PlayerTracker.Banlists.EssentialsBanlist;
+import org.LostTheGame.PlayerTracker.Banlists.VanillaBanlist;
 import org.LostTheGame.PlayerTracker.Database.Database;
 import org.LostTheGame.PlayerTracker.Database.MySQLDatabase;
 import org.LostTheGame.PlayerTracker.Database.SQLiteDatabase;
@@ -26,8 +29,10 @@ public class PlayerTracker extends JavaPlugin {
 	public FileConfiguration config;
 	public FileConfiguration ban_config;
 	private final LoginListenerTracker playerListener = new LoginListenerTracker(this);
+	
 	@SuppressWarnings("unused")
 	private Plugin banPlugin;
+	
 	
 	boolean localdb;
 	public boolean mysql = false;
@@ -41,6 +46,8 @@ public class PlayerTracker extends JavaPlugin {
 	public List<String> untraceable;
 	
 	Database db;
+	public Banlist banlist;
+	public boolean banlistEnabled = false;
 	
 	public static Logger log = Logger.getLogger("Minecraft");
 	
@@ -139,12 +146,16 @@ public class PlayerTracker extends JavaPlugin {
     	// Essentials/Commandbook have lowest priority, because they are not ban-specific plugins
         else if ( this.getServer().getPluginManager().isPluginEnabled("Essentials") ) {
         	log.info("[P-Tracker] Essentials detected, attempting to use as banlist."); 
+        	this.banlistEnabled = true;
+        	this.banlist = new EssentialsBanlist( this );
         }
         else if ( this.getServer().getPluginManager().isPluginEnabled("CommandBook") ) {
         	log.info("[P-Tracker] CommandBook detected, attempting to use as banlist."); 
         }
         else {
-        	// use vanilla.
+        	log.info("[P-Tracker] no Banlist plugin detected, using Vanilla."); 
+        	this.banlistEnabled = true;
+        	this.banlist = new VanillaBanlist( this );
         }
     	log.info("[P-Tracker] Player-Tracker has been enabled.");
     }

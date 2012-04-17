@@ -222,6 +222,10 @@ public class SQLiteDatabase extends Database {
 			for(String name:acctList) {
 				if ( name != null ) {
 					s = ChatColor.DARK_GREEN + "   - " + ChatColor.UNDERLINE + name;
+					if ( plugin.banlistEnabled ) {
+						if ( plugin.banlist.isBanned( name ) )
+							s += ChatColor.RESET +""+ ChatColor.DARK_GREEN + "" + ChatColor.BOLD + " (BANNED)";
+					}
 					if ( IPdisp )
 						s += ChatColor.RESET +""+ ChatColor.DARK_GREEN +" ("+ IPlist[i] +")";
 					
@@ -276,6 +280,10 @@ public class SQLiteDatabase extends Database {
 			for(String name:acctList) {
 				if ( name != null ) {
 					line = ChatColor.DARK_GREEN + "   - " + ChatColor.UNDERLINE + name;
+					if ( plugin.banlistEnabled ) {
+						if ( plugin.banlist.isBanned( name ) )
+							line += ChatColor.RESET +""+ ChatColor.DARK_GREEN +""+ ChatColor.BOLD + " (BANNED)";
+					}
 					if ( IPdisp )
 						line += ChatColor.RESET +""+ ChatColor.DARK_GREEN +" ("+ IP +")";
 						

@@ -1,12 +1,17 @@
 local-db: true
+persistence-days: 60
+
 mysql-enable: false
 mysql-database: jdbc:mysql://localhost:3306/minecraft
 mysql-user: root
 mysql-password: root
 mysql-table: player-tracker
+
 mcbans-enable: false
 mcbans-API-key: 0
+
 mcbouncer-enable: false
 mcbouncer-API-key: 0
+
 untraceable-players:
   - Notch

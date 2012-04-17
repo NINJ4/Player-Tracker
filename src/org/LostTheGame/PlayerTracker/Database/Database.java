@@ -7,6 +7,7 @@ import org.bukkit.command.CommandSender;
 
 public abstract class Database {
 	private Connection conn = null;
+	public boolean initialized;
 
 	public void addTracks( String playername, String IP ) {
 		//add some tracks to the database.
@@ -36,5 +37,8 @@ public abstract class Database {
     }
     public boolean localStats( CommandSender sender ) {
     	return false;
+    }
+    public void cleanUp() {
+    	// clean up old entries in the db
     }
 }

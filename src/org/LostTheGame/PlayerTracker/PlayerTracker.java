@@ -26,7 +26,8 @@ public class PlayerTracker extends JavaPlugin {
 	public FileConfiguration config;
 	public FileConfiguration ban_config;
 	private final LoginListenerTracker playerListener = new LoginListenerTracker(this);
-	private Plugin banlist;
+	@SuppressWarnings("unused")
+	private Plugin banPlugin;
 	
 	boolean localdb;
 	public boolean mysql = false;
@@ -68,8 +69,11 @@ public class PlayerTracker extends JavaPlugin {
 					if (!( db.initialize() )) {
 	                	log.warning("[P-Tracker]: Can't setup mySQL database.");
 	                }
-					else
+					else {
 						getServer().getPluginManager().registerEvents(playerListener, this);
+						if ( config.getInt("persistence-days", 60) > 0 )
+							db.cleanUp();
+					}
 	            } catch (Exception e) {
 	                log.log(Level.CONFIG, "Unable to connect to database with provided info!");
 	                log.severe("[P-Tracker]: Can't initiate connection to mySQL database.");
@@ -81,9 +85,13 @@ public class PlayerTracker extends JavaPlugin {
 				if ( !( db.initialize() )) {
                 	log.warning("[P-Tracker]: Can't setup SQLite database.");
                 }
-				else
+				else {
 					getServer().getPluginManager().registerEvents(playerListener, this);
+					if ( config.getInt("persistence-days", 60) > 0 )
+						db.cleanUp();
+				}
         	}
+        		
         }
         if ( mcbans ) {
         	bansConn = new MCBansIntegration(this);
@@ -120,11 +128,23 @@ public class PlayerTracker extends JavaPlugin {
         	this.getServer().getPluginManager().disablePlugin(this);
         	return;
         }
+        
+        	// banlist figuring:
+        
         if ( this.getServer().getPluginManager().isPluginEnabled("FigAdmin") ) {
-        	log.info("[P-Tracker] FigAdmin detected."); 
-        	banlist = this.getServer().getPluginManager().getPlugin("FigAdmin");
-        	ban_config = banlist.getConfig();
+        	log.info("[P-Tracker] FigAdmin detected, attempting to grab banlist."); 
+        	banPlugin = this.getServer().getPluginManager().getPlugin("FigAdmin");
         	//log.info(  );
+        }
+    	// Essentials/Commandbook have lowest priority, because they are not ban-specific plugins
+        else if ( this.getServer().getPluginManager().isPluginEnabled("Essentials") ) {
+        	log.info("[P-Tracker] Essentials detected, attempting to use as banlist."); 
+        }
+        else if ( this.getServer().getPluginManager().isPluginEnabled("CommandBook") ) {
+        	log.info("[P-Tracker] CommandBook detected, attempting to use as banlist."); 
+        }
+        else {
+        	// use vanilla.
         }
     	log.info("[P-Tracker] Player-Tracker has been enabled.");
     }

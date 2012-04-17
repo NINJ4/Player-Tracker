@@ -22,7 +22,6 @@ public class MySQLDatabase extends Database {
     private Connection conn = null;
     String table;
 	private String prefix = "[mySQL]";
-
     private PlayerTracker plugin;
 
     public MySQLDatabase(PlayerTracker instance) {
@@ -76,7 +75,6 @@ public class MySQLDatabase extends Database {
         	PlayerTracker.log.log(Level.SEVERE, "[P-Tracker] Couldn't execute MySQL statement: ", ex);
             return false;
         }
-
         return true;
 
     }
@@ -387,5 +385,18 @@ public class MySQLDatabase extends Database {
 			e.printStackTrace();
 		}
     	return false;
+    }
+    public void cleanUp() {
+    	int days = plugin.config.getInt("persistence-days", 60);
+    	PreparedStatement ps = null;
+    	try {
+    		ps = this.conn.prepareStatement(
+    				"DELETE FROM `"+ this.table +"` " +
+    				"WHERE DATE_SUB(CURDATE(),INTERVAL "+ days +" DAY) > `time`");
+    		ps.executeUpdate();
+    	} catch (SQLException e) {
+			PlayerTracker.log.severe( "[P-Tracker]"+ this.prefix +" exception in cleanUp(): " + e );
+			e.printStackTrace();
+		}
     }
 }

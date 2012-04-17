@@ -74,7 +74,7 @@ public class SQLiteDatabase extends Database {
 						+ "\"id\" INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL , "
 						+ "\"accountname\" VARCHAR NOT NULL  DEFAULT 0, "
 						+ "\"ip\" VARCHAR NOT NULL  DEFAULT 0, "
-						+ "\"time\" DATETIME DEFAULT CURRENT_TIME)");
+						+ "\"time\" DATETIME DEFAULT DATETIME('NOW') )");
                 ps.execute();
                 if (!dbm.getTables(null, null, table, null).next())
                     throw new SQLException("[P-Tracker][SQLite] Table " + table + " not found; tired to create and failed");
@@ -395,5 +395,18 @@ public class SQLiteDatabase extends Database {
 			e.printStackTrace();
 		}
     	return false;
+    }
+    public void cleanUp() {
+    	int days = plugin.config.getInt("persistence-days", 60);
+    	PreparedStatement ps = null;
+    	try {
+    		ps = this.conn.prepareStatement(
+    				"DELETE from `"+ this.table +"` " +
+    				"WHERE `time` < date('NOW', '-"+ days +" DAYS')");
+    		ps.executeUpdate();
+    	} catch (SQLException e) {
+			PlayerTracker.log.severe( "[P-Tracker]"+ this.prefix +" exception in cleanUp(): " + e );
+			e.printStackTrace();
+		}
     }
 }

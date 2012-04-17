@@ -1,8 +1,0 @@
-bin
-bin/**
-src/org/json
-src/org/json/**
-.settings
-.settings/**
-.classpath
-

@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 
 import org.LostTheGame.PlayerTracker.Banlists.Banlist;
 import org.LostTheGame.PlayerTracker.Banlists.EssentialsBanlist;
+import org.LostTheGame.PlayerTracker.Banlists.FigAdminBanlist;
 import org.LostTheGame.PlayerTracker.Banlists.VanillaBanlist;
 import org.LostTheGame.PlayerTracker.Database.Database;
 import org.LostTheGame.PlayerTracker.Database.MySQLDatabase;
@@ -19,7 +20,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.json.JSONException;
 
@@ -30,8 +30,8 @@ public class PlayerTracker extends JavaPlugin {
 	public FileConfiguration ban_config;
 	private final LoginListenerTracker playerListener = new LoginListenerTracker(this);
 	
-	@SuppressWarnings("unused")
-	private Plugin banPlugin;
+	//@SuppressWarnings("unused")
+	//private Plugin banPlugin;
 	
 	
 	boolean localdb;
@@ -76,11 +76,8 @@ public class PlayerTracker extends JavaPlugin {
 					if (!( db.initialize() )) {
 	                	log.warning("[P-Tracker]: Can't setup mySQL database.");
 	                }
-					else {
-						getServer().getPluginManager().registerEvents(playerListener, this);
-						if ( config.getInt("persistence-days", 60) > 0 )
+					else if ( config.getInt("persistence-days", 60) > 0 )
 							db.cleanUp();
-					}
 	            } catch (Exception e) {
 	                log.log(Level.CONFIG, "Unable to connect to database with provided info!");
 	                log.severe("[P-Tracker]: Can't initiate connection to mySQL database.");
@@ -92,11 +89,8 @@ public class PlayerTracker extends JavaPlugin {
 				if ( !( db.initialize() )) {
                 	log.warning("[P-Tracker]: Can't setup SQLite database.");
                 }
-				else {
-					getServer().getPluginManager().registerEvents(playerListener, this);
-					if ( config.getInt("persistence-days", 60) > 0 )
+				else if ( config.getInt("persistence-days", 60) > 0 )
 						db.cleanUp();
-				}
         	}
         		
         }
@@ -129,6 +123,9 @@ public class PlayerTracker extends JavaPlugin {
 				mcbouncer = false;
 			}
         }
+        
+        // enable our events
+		getServer().getPluginManager().registerEvents(playerListener, this);
     	
         if ( ( !localdb ) && ( !mcbans ) && ( !mcbouncer ) ) {
         	log.warning("[P-Tracker]: No databases in use, disabling plugin.");
@@ -139,9 +136,13 @@ public class PlayerTracker extends JavaPlugin {
         	// banlist figuring:
         
         if ( this.getServer().getPluginManager().isPluginEnabled("FigAdmin") ) {
-        	log.info("[P-Tracker] FigAdmin detected, attempting to grab banlist."); 
-        	banPlugin = this.getServer().getPluginManager().getPlugin("FigAdmin");
-        	//log.info(  );
+        	//log.info("[P-Tracker] FigAdmin detected, attempting to grab banlist."); 
+        	//banPlugin = this.getServer().getPluginManager().getPlugin("FigAdmin");
+log.info( "seriously wtf" );
+        	this.banlistEnabled = true;
+log.info( "banlistenabled" );
+        	this.banlist = new FigAdminBanlist( this );
+log.info( "past thisbanlist=newbanlist" );
         }
     	// Essentials/Commandbook have lowest priority, because they are not ban-specific plugins
         else if ( this.getServer().getPluginManager().isPluginEnabled("Essentials") ) {
@@ -279,7 +280,7 @@ public class PlayerTracker extends JavaPlugin {
 	    			if ( mcbanlist != null )
 	    				gbans.addAll( mcbanlist );
 	    		}
-	    		if ( gbans == null ) {
+	    		if ( gbans.size() == 0 ) {
 	    			sender.sendMessage(ChatColor.GREEN +"[P-Tracker] No Global bans found.");
 	    		}
 	    		else {
@@ -315,7 +316,7 @@ public class PlayerTracker extends JavaPlugin {
     		else
     			log.severe("[P-Tracker] Failed to getMCBans Bans: unknown error!");
     	}
-    	else if ( mcbouncer ) {
+    	if ( mcbouncer ) {
     		testint = bouncerConn.banCount( playername );
     		if ( testint > -1 )
         		banCount += testint;
@@ -323,6 +324,7 @@ public class PlayerTracker extends JavaPlugin {
     			log.severe("[P-Tracker] Failed to getMCBouncer Bans: unknown error!");
     			
     	}
+  
     	
     	if ( banCount > 0 )
     		gbans = playername +" has "+ banCount +" Global bans.";

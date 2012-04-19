@@ -23,7 +23,6 @@ public class FigAdminBanlist extends Banlist {
 	
 	public FigAdminBanlist( PlayerTracker instance ) {
 		this.plugin = instance;
-PlayerTracker.log.warning("initialized");
 		Plugin fig_plugin = plugin.getServer().getPluginManager().getPlugin("FigAdmin");
 		//this.fig = (FigAdmin) fig_plugin;
 		
@@ -58,7 +57,6 @@ PlayerTracker.log.warning("initialized");
 			} catch (SQLException e1) { }
 			return;
 		}
-        PlayerTracker.log.warning("successfully completed init");
         this.ismySQL = true;
         return;
 			
@@ -90,7 +88,6 @@ PlayerTracker.log.warning("initialized");
     public boolean isBanned( String playername ) {
     	if ( this.conn == null )
     		return false;
-PlayerTracker.log.warning("conn exists!?");
     	PreparedStatement ps = null;
     	ResultSet rs = null;
     	try {

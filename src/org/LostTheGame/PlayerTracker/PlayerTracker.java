@@ -136,13 +136,10 @@ public class PlayerTracker extends JavaPlugin {
         	// banlist figuring:
         
         if ( this.getServer().getPluginManager().isPluginEnabled("FigAdmin") ) {
-        	//log.info("[P-Tracker] FigAdmin detected, attempting to grab banlist."); 
+        	log.info("[P-Tracker] FigAdmin detected, attempting to grab banlist."); 
         	//banPlugin = this.getServer().getPluginManager().getPlugin("FigAdmin");
-log.info( "seriously wtf" );
         	this.banlistEnabled = true;
-log.info( "banlistenabled" );
         	this.banlist = new FigAdminBanlist( this );
-log.info( "past thisbanlist=newbanlist" );
         }
     	// Essentials/Commandbook have lowest priority, because they are not ban-specific plugins
         else if ( this.getServer().getPluginManager().isPluginEnabled("Essentials") ) {

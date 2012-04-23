@@ -8,10 +8,12 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.LostTheGame.PlayerTracker.Banlists.Banlist;
-import org.LostTheGame.PlayerTracker.Banlists.EssentialsBanlist;
-import org.LostTheGame.PlayerTracker.Banlists.FigAdminBanlist;
-import org.LostTheGame.PlayerTracker.Banlists.VanillaBanlist;
+import org.LostTheGame.PlayerTracker.Banlist.BanHammerBanlist;
+import org.LostTheGame.PlayerTracker.Banlist.Banlist;
+import org.LostTheGame.PlayerTracker.Banlist.CommandBookBanlist;
+import org.LostTheGame.PlayerTracker.Banlist.EssentialsBanlist;
+import org.LostTheGame.PlayerTracker.Banlist.FigAdminBanlist;
+import org.LostTheGame.PlayerTracker.Banlist.VanillaBanlist;
 import org.LostTheGame.PlayerTracker.Database.Database;
 import org.LostTheGame.PlayerTracker.Database.MySQLDatabase;
 import org.LostTheGame.PlayerTracker.Database.SQLiteDatabase;
@@ -134,12 +136,18 @@ public class PlayerTracker extends JavaPlugin {
         }
         
         	// banlist figuring:
-        
         if ( this.getServer().getPluginManager().isPluginEnabled("FigAdmin") ) {
+        		// This is shittily done, but it's the best I got without the source.
         	log.info("[P-Tracker] FigAdmin detected, attempting to grab banlist."); 
         	//banPlugin = this.getServer().getPluginManager().getPlugin("FigAdmin");
         	this.banlistEnabled = true;
         	this.banlist = new FigAdminBanlist( this );
+        }
+        else if ( this.getServer().getPluginManager().isPluginEnabled("BanHammer") ) {
+        	log.info("[P-Tracker] BanHammer detected, attempting to use as banlist."); 
+        	//banPlugin = this.getServer().getPluginManager().getPlugin("FigAdmin");
+        	this.banlistEnabled = true;
+        	this.banlist = new BanHammerBanlist( this );
         }
     	// Essentials/Commandbook have lowest priority, because they are not ban-specific plugins
         else if ( this.getServer().getPluginManager().isPluginEnabled("Essentials") ) {
@@ -149,6 +157,8 @@ public class PlayerTracker extends JavaPlugin {
         }
         else if ( this.getServer().getPluginManager().isPluginEnabled("CommandBook") ) {
         	log.info("[P-Tracker] CommandBook detected, attempting to use as banlist."); 
+        	this.banlistEnabled = true;
+        	this.banlist = new CommandBookBanlist( this );
         }
         else {
         	log.info("[P-Tracker] no Banlist plugin detected, using Vanilla."); 
@@ -295,12 +305,12 @@ public class PlayerTracker extends JavaPlugin {
     public String getNotifyLine( String playername ) {
     	String aliases = "";
     	String gbans = "";
+		int acount = 0;
     	if ( localdb ) {
     		if ( !untraceable.contains( playername.toLowerCase() ) ) {
-	    		int acount;
 	    		acount = db.AliasCount(playername);
 	    		if ( acount != 0 )
-	    			aliases = playername +" has "+ acount +" associated accounts. ";
+	    			aliases = playername +" has "+ acount +" associated accounts";
     		}
     	}
     	
@@ -323,8 +333,14 @@ public class PlayerTracker extends JavaPlugin {
     	}
   
     	
-    	if ( banCount > 0 )
-    		gbans = playername +" has "+ banCount +" Global bans.";
+    	if ( banCount > 0 ) {
+    		if ( acount < 1 )
+    			gbans = playername +" has "+ banCount +" Global bans.";
+    		else 
+    			gbans = " and "+ banCount +" Global bans.";
+    	}
+    	else if ( aliases != "" )
+    		aliases += ".";
     		
     	
     	

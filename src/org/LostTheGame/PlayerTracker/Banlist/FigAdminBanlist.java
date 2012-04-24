@@ -78,8 +78,8 @@ public class FigAdminBanlist extends Banlist {
         }
         return null;
     }
-    private void disableFig() {
-    	PlayerTracker.log.warning("[P-Tracker]: mySQL error with FigAdmin, disabling Fig connection.");
+    public void disableFig() {
+    	PlayerTracker.log.info("[P-Tracker]: disabling FigAdmin mySQL connection.");
     	try {
 			conn.close();
 		} catch (SQLException e1) { }
@@ -114,5 +114,9 @@ public class FigAdminBanlist extends Banlist {
     	
     	
     	return false;
+    }
+    
+    public boolean isFig() {
+    	return true;
     }
 }

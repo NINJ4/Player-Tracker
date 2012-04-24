@@ -64,8 +64,9 @@ public class MCBansIntegration {
 		     rd.close();
 		     return result;
 	     } catch (Exception e) {
-			PlayerTracker.log.severe( "[P-Tracker] Fetch Data Error" );
-			e.printStackTrace();
+			PlayerTracker.log.warning( "[P-Tracker] MCBans Fetch Data Error" );
+			if ( plugin.debug == true )
+				e.printStackTrace();
 		}
 		return "";
 	}
@@ -75,14 +76,18 @@ public class MCBansIntegration {
 			JSONObject json = new JSONObject(s);
 			return json;
 		} catch (JSONException e) {
-			PlayerTracker.log.severe( "[P-Tracker] Cannot convert retrieved MCBans data to JSON: " );
-			e.printStackTrace();
+			PlayerTracker.log.warning( "[P-Tracker] Cannot convert retrieved MCBans data to JSON, is MCBans down/unreachable? " );
+			if ( plugin.debug == true )
+				e.printStackTrace();
 		}
 		return null;
 	}
 	public int banCount( String playername ) {
 		JSONObject raw = getBans( playername );
 		try {
+			if ( raw == null )
+				return -1;
+			
 			int banCount = raw.getInt("total");
 			if ( banCount == 0 ) {
 				return 0;

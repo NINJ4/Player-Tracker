@@ -8,4 +8,8 @@ public abstract class Banlist {
 	public boolean isBanned( String playername ) {
 		return false;
 	}
+	
+	public boolean isFig() {
+		return false;
+	}
 }

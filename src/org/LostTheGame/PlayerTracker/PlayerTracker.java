@@ -31,6 +31,7 @@ public class PlayerTracker extends JavaPlugin {
 	public FileConfiguration config;
 	public FileConfiguration ban_config;
 	private final LoginListenerTracker playerListener = new LoginListenerTracker(this);
+	public boolean debug = true;
 	
 	//@SuppressWarnings("unused")
 	//private Plugin banPlugin;
@@ -177,6 +178,8 @@ public class PlayerTracker extends JavaPlugin {
     public void onDisable(){ 
     	if ( config.getBoolean("local-db", false) )
     		db.disconnect();
+    	if ( banlist.isFig() )
+    		( (FigAdminBanlist) banlist ).disableFig();
     }
 
     public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args){
@@ -238,13 +241,19 @@ public class PlayerTracker extends JavaPlugin {
     	return false; 
     }
 
-    private boolean IPTrack( String IP, CommandSender sender, boolean IPdisp ) {
-    	if ( localdb ) {
-    		db.IPTrack(IP, sender, IPdisp);
-    	}
-    	if ( mcbouncer ) {
-    		//bouncerConn.IPTrack( IP );
-    	}
+    private boolean IPTrack( String ip, CommandSender sender, boolean IPdisp ) {
+		TrackerRunnables ipTrack1 = new TrackerRunnables( ip, sender, IPdisp) {
+			public void run() {
+				if ( localdb ) {
+		    		db.IPTrack(ip, sender, IPdisp);
+		    	}
+		    	if ( mcbouncer ) {
+		    		//bouncerConn.IPTrack( IP );
+		    	}
+		    	return;
+			}
+		};
+		new Thread(ipTrack1).start();
     	return true;
     }
     private boolean PlayerTrack( String playername, CommandSender sender, boolean wildcard, boolean IPdisp ) {
@@ -269,34 +278,40 @@ public class PlayerTracker extends JavaPlugin {
     		return true;
     	}
     	else {
-	    	if ( localdb ) {
-	    		String result;
-	    		result = db.PlayerTrack(playername, sender, wildcard, IPdisp);
-	    		if ( result != null )
-	    			playername = result;
-	    	}
-	    	if ( ( mcbouncer ) || ( mcbans ) ) {
-	    		ArrayList<String> gbans = new ArrayList<String>();
-	    		if ( mcbouncer ) {
-	    			List<String> mcbanlist = bouncerConn.PlayerTrack(playername, sender);
-	    			if ( mcbanlist != null )
-	    				gbans.addAll( mcbanlist );
-	    		}
-	    		if ( mcbans ) {
-	    			List<String> mcbanlist = bansConn.PlayerTrack(playername, sender);
-	    			if ( mcbanlist != null )
-	    				gbans.addAll( mcbanlist );
-	    		}
-	    		if ( gbans.size() == 0 ) {
-	    			sender.sendMessage(ChatColor.GREEN +"[P-Tracker] No Global bans found.");
-	    		}
-	    		else {
-	    			sender.sendMessage(ChatColor.GREEN +"[P-Tracker] "+ gbans.size() +" Global bans found.");
-		    		for(String ban : gbans) {
-		    			sender.sendMessage(ban);
-		    		}
-	    		}
-	    	}
+    		TrackerRunnables pTrack1 = new TrackerRunnables(playername, sender, wildcard, IPdisp) {
+    			public void run() {
+			    	if ( localdb ) {
+			    		String result;
+			    		result = db.PlayerTrack(playername, sender, wildcard, IPdisp);
+			    		if ( result != null )
+			    			playername = result;
+			    	}
+			    	if ( ( mcbouncer ) || ( mcbans ) ) {
+			    		ArrayList<String> gbans = new ArrayList<String>();
+			    		if ( mcbouncer ) {
+			    			List<String> mcbanlist = bouncerConn.PlayerTrack(playername, sender);
+			    			if ( mcbanlist != null )
+			    				gbans.addAll( mcbanlist );
+			    		}
+			    		if ( mcbans ) {
+			    			List<String> mcbanlist = bansConn.PlayerTrack(playername, sender);
+			    			if ( mcbanlist != null )
+			    				gbans.addAll( mcbanlist );
+			    		}
+			    		if ( gbans.size() == 0 ) {
+			    			sender.sendMessage(ChatColor.GREEN +"[P-Tracker] No Global bans found.");
+			    		}
+			    		else {
+			    			sender.sendMessage(ChatColor.GREEN +"[P-Tracker] "+ gbans.size() +" Global bans found.");
+				    		for(String ban : gbans) {
+				    			sender.sendMessage(ban);
+				    		}
+			    		}
+			    	}
+				return;
+    			}
+    		};
+    		new Thread(pTrack1).start();
     	}
     	return true;
     }

@@ -1,5 +1,7 @@
 package org.LostTheGame.PlayerTracker;
 
+import java.util.ArrayList;
+
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -20,17 +22,37 @@ public class LoginListenerTracker implements Listener {
 		String playername = player.getDisplayName();
 		String ip = player.getAddress().getAddress().getHostAddress();
 
-		if ( plugin.localdb )
-			plugin.db.addTracks(playername, ip);
+		if ( plugin.localdb ) {
+			TrackerRunnables addT = new TrackerRunnables( playername, ip ) {
+				public void run() {
+					plugin.db.addTracks(playername, ip);
+					return;
+				}
+			};
+			new Thread(addT).start();
+		}
 		
         Player[] players = plugin.getServer().getOnlinePlayers();
-    	String notify = plugin.getNotifyLine( playername );
-    	if ( notify != null ) {
-	        for (Player user : players) {
-	            if (user.hasPermission("playertracker.onJoin")) {
-	                user.sendMessage( ChatColor.YELLOW +"[P-Tracker] "+ notify );
-	            }
+        ArrayList<Player> notifyUs = new ArrayList<Player>();
+    
+	    for (Player user : players) {
+	    	if (user.hasPermission("playertracker.onJoin")) {
+	    		notifyUs.add(user);
 	        }
-    	}
+	    }
+	    if ( notifyUs.size() > 0 ) {
+	    	TrackerRunnables Tnotify = new TrackerRunnables( playername, notifyUs ) {
+	    		public void run() {
+			    	String notify = plugin.getNotifyLine( playername );
+			    	if ( notify != null )
+				       	for (Player user : notifyUs ) {
+				       		user.sendMessage( ChatColor.YELLOW +"[P-Tracker] "+ notify );
+				       	}
+			    	
+			    	return;
+	    		}
+	    	};
+	    	new Thread( Tnotify ).start();
+	    }
     }
 }

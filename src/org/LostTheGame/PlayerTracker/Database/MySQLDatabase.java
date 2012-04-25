@@ -366,8 +366,10 @@ public class MySQLDatabase extends Database {
 				
 				ips++;
 			}
-			rs.close();
-			rs2.close();
+			if ( rs != null )
+				rs.close();
+			if ( rs2 != null )
+				rs2.close();
 		} catch (SQLException ex) {
 			PlayerTracker.log.log(Level.SEVERE, "[P-Tracker] Couldn't execute MySQL statement: ", ex);
 		}

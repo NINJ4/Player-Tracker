@@ -7,6 +7,9 @@ mysql-user: root
 mysql-password: root
 mysql-table: player-tracker
 
+minebans-enable: false
+minebans-API-key: 0
+
 mcbans-enable: false
 mcbans-API-key: 0
 

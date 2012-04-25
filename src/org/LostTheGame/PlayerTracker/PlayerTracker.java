@@ -46,6 +46,9 @@ public class PlayerTracker extends JavaPlugin {
 	boolean mcbouncer;
 	private MCBouncerIntegration bouncerConn;
 	
+	boolean minebans;
+	private MineBansIntegration mineConn;
+	
 	public List<String> untraceable;
 	
 	Database db;
@@ -62,6 +65,7 @@ public class PlayerTracker extends JavaPlugin {
     	this.mysql = config.getBoolean("mysql-enable", false);
     	this.mcbans = config.getBoolean("mcbans-enable", false);
     	this.mcbouncer = config.getBoolean("mcbouncer-enable", false);
+    	this.minebans = config.getBoolean("minebans-enable", false);
     	
     	untraceable = config.getStringList( "untraceable-players" );
 
@@ -111,7 +115,7 @@ public class PlayerTracker extends JavaPlugin {
 				e.printStackTrace();
 			}
         }
-        
+
         if ( mcbouncer ) {
         	bouncerConn = new MCBouncerIntegration(this);
         	try {
@@ -119,12 +123,21 @@ public class PlayerTracker extends JavaPlugin {
 				if ( mcbouncer )
 					log.info("[P-Tracker] MCBouncer connection successful.");
 			} catch (JSONException e) {
-				log.severe( "[P-Tracker]: Can't initiate connection to MCBouncer!" + e );
+				log.warning( "[P-Tracker]: Can't initiate connection to MCBouncer!" + e );
 				mcbouncer = false;
 			} catch (IOException e) {
-				log.severe( "[P-Tracker]: Can't initiate connection to MCBouncer!" + e );
+				log.warning( "[P-Tracker]: Can't initiate connection to MCBouncer!" + e );
 				mcbouncer = false;
 			}
+        }
+        if ( minebans ) {
+        	mineConn = new MineBansIntegration( this );
+        	
+			minebans = mineConn.init();
+			if ( minebans )
+				log.info("[P-Tracker] MineBans connection successful.");
+			else
+				log.warning("[P-Tracker]: Can't initiate connection to MineBans!");
         }
         
         // enable our events
@@ -298,6 +311,11 @@ public class PlayerTracker extends JavaPlugin {
 			    			if ( mcbanlist != null )
 			    				gbans.addAll( mcbanlist );
 			    		}
+			    		if ( minebans ) {
+			    			List<String> minebanlist = mineConn.PlayerTrack( playername );
+			    			if ( minebanlist != null )
+			    				gbans.addAll( minebanlist );
+			    		}
 			    		if ( gbans.size() == 0 ) {
 			    			sender.sendMessage(ChatColor.GREEN +"[P-Tracker] No Global bans found.");
 			    		}
@@ -336,16 +354,24 @@ public class PlayerTracker extends JavaPlugin {
     		if ( testint > -1 )
     			banCount += testint;
     		else
-    			log.severe("[P-Tracker] Failed to getMCBans Bans: unknown error!");
+    			log.warning("[P-Tracker] Failed to get banCount from MCBans: unknown error!");
     	}
     	if ( mcbouncer ) {
     		testint = bouncerConn.banCount( playername );
     		if ( testint > -1 )
         		banCount += testint;
     		else
-    			log.severe("[P-Tracker] Failed to getMCBouncer Bans: unknown error!");
+    			log.warning("[P-Tracker] Failed to get banCount from MCBouncer: unknown error!");
     			
     	}
+		if ( minebans ) {
+			testint = mineConn.banCount( playername );
+			if ( testint > -1 )
+				banCount += testint;
+			else
+    			log.warning("[P-Tracker] Failed to get banCount from Minebans: unknown error!");
+
+		}
   
     	
     	if ( banCount > 0 ) {

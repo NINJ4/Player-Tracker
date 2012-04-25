@@ -61,20 +61,26 @@ public class SQLiteDatabase extends Database {
 				e.printStackTrace();
 			}
 		}
+
 		try {
 			this.conn = DriverManager.getConnection("jdbc:sqlite:" +
-			sqlFile.getAbsolutePath());
+												sqlFile.getAbsolutePath());
+			if ( conn == null )
+				PlayerTracker.log.warning( "CONN IS NULL? - "+ "jdbc:sqlite:" + sqlFile.getAbsolutePath() );
+
 			
 			DatabaseMetaData dbm = conn.getMetaData();
             // Table create if not it exists
             if (!dbm.getTables(null, null, table, null).next()) {
-            	PreparedStatement ps = null;
                 getLogger().log(Level.INFO, "[P-Tracker][SQLite] Creating table " + table + ".");
+
+            	PreparedStatement ps = null;
                 ps = conn.prepareStatement("CREATE TABLE \""+ table +"\" ("
 						+ "\"id\" INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL , "
 						+ "\"accountname\" VARCHAR NOT NULL  DEFAULT 0, "
 						+ "\"ip\" VARCHAR NOT NULL  DEFAULT 0, "
-						+ "\"time\" DATETIME DEFAULT DATETIME('NOW') )");
+						+ "\"time\" DATETIME DEFAULT CURRENT_TIMESTAMP)");
+            	//ps = conn.prepareStatement("CREATE TABLE "player-tracker" ("id" INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL , "accountname" VARCHAR NOT NULL  DEFAULT 0, "ip" VARCHAR NOT NULL  DEFAULT 0, "time" DATETIME DEFAULT CURRENT_TIMESTAMP)");
                 ps.execute();
                 if (!dbm.getTables(null, null, table, null).next())
                     throw new SQLException("[P-Tracker][SQLite] Table " + table + " not found; tired to create and failed");
@@ -82,7 +88,8 @@ public class SQLiteDatabase extends Database {
 			
 			return true;
 		} catch (SQLException e) {
-			PlayerTracker.log.severe( "[P-Tracker][SQLite] exception in initialize(): " + e );
+			PlayerTracker.log.severe( "[P-Tracker][SQLite] exception in initialize(): " );
+			e.printStackTrace();
 		}
 		return false;
 	}

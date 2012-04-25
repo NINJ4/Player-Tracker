@@ -69,7 +69,6 @@ public class PlayerTracker extends JavaPlugin {
     	this.minebans = config.getBoolean("minebans-enable", false);
     	
     	List<String> untraceable_tmp = config.getStringList( "untraceable" );
-log.warning(untraceable_tmp.toString());
     	for(int i=0,l=untraceable_tmp.size();i<l;++i) {
     		String thisEntry = untraceable_tmp.remove(0);
     		
@@ -186,6 +185,7 @@ log.warning(untraceable_tmp.toString());
     	log.info("[P-Tracker] Player-Tracker has been enabled.");
     }
     public void setupConfig() {
+    	this.reloadConfig();
         this.config = this.getConfig();
     	config.options().copyDefaults(true);
         if ( config.contains("untraceable-players") ) {
@@ -202,11 +202,11 @@ log.warning(untraceable_tmp.toString());
     }
      
     public void onDisable(){ 
+    	
     	if ( localdb )
     		db.disconnect();
     	if ( ( banlist != null ) && ( banlist.isFig() ) )
     		( (FigAdminBanlist) banlist ).disableFig();
-    	saveConfig();
     }
 
     public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args){
@@ -432,9 +432,7 @@ public boolean hideAccount( String playername, CommandSender sender ) {
 	List<String> temp = new ArrayList<String>( untraceableIP );
 	temp.addAll(untraceable);
 		
-log.warning(temp.toString());
 	temp.add( playername );
-log.warning(temp.toString());
 
 	config.set( "untraceable", temp );
 	this.saveConfig();

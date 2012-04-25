@@ -2,7 +2,7 @@ name: Player-Tracker
 main: org.LostTheGame.PlayerTracker.PlayerTracker
 author: NINJ4
 softdepend: [Essentials, CommandBook, FigAdmin, BanHammer]
-version: 1.1.7
+version: 1.1.8
 
 commands:
   track:

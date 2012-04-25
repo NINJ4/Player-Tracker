@@ -13,6 +13,7 @@ import org.LostTheGame.PlayerTracker.Banlist.Banlist;
 import org.LostTheGame.PlayerTracker.Banlist.CommandBookBanlist;
 import org.LostTheGame.PlayerTracker.Banlist.EssentialsBanlist;
 import org.LostTheGame.PlayerTracker.Banlist.FigAdminBanlist;
+import org.LostTheGame.PlayerTracker.Banlist.UltraBansBanlist;
 import org.LostTheGame.PlayerTracker.Banlist.VanillaBanlist;
 import org.LostTheGame.PlayerTracker.Database.Database;
 import org.LostTheGame.PlayerTracker.Database.MySQLDatabase;
@@ -160,9 +161,13 @@ public class PlayerTracker extends JavaPlugin {
         	this.banlistEnabled = true;
         	this.banlist = new FigAdminBanlist( this );
         }
+        else if ( this.getServer().getPluginManager().isPluginEnabled("UltraBan") ) {
+        	log.info("[P-Tracker] UltraBans detected, attempting to use as banlist."); 
+        	this.banlistEnabled = true;
+        	this.banlist = new UltraBansBanlist( this );
+        }
         else if ( this.getServer().getPluginManager().isPluginEnabled("BanHammer") ) {
         	log.info("[P-Tracker] BanHammer detected, attempting to use as banlist."); 
-        	//banPlugin = this.getServer().getPluginManager().getPlugin("FigAdmin");
         	this.banlistEnabled = true;
         	this.banlist = new BanHammerBanlist( this );
         }

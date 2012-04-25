@@ -128,6 +128,9 @@ public class SQLiteDatabase extends Database {
 				
 					// Get the other accounts linked with these IP addresses.
 				thisIP = rs.getString("ip");
+				if ( ( !override ) && ( plugin.untraceableIP.contains( thisIP ) ) )
+					continue;
+				
 				ps	= conn.prepareStatement(
 						"SELECT `accountname` " +
 						"FROM `"+ table + "` " +
@@ -187,6 +190,9 @@ public class SQLiteDatabase extends Database {
 					
 						// Get the other accounts linked with these IP addresses.
 					thisIP = rs.getString("ip");
+					if ( ( !override ) && ( plugin.untraceableIP.contains( thisIP ) ) )
+						continue;
+					
 					ps	= conn.prepareStatement(
 							"SELECT `accountname` " +
 							"FROM `"+ table + "` " +
@@ -275,6 +281,11 @@ public class SQLiteDatabase extends Database {
 				}
 			}
 			rs.close();
+			if ( names == 0 ) {
+				sender.sendMessage(ChatColor.GREEN + "" + "[P-Tracker] IP Address \""+ ChatColor.UNDERLINE + IP + ChatColor.RESET + ChatColor.GREEN + "\" is not associated with any known accounts.");
+				return true;
+			}
+			
 			sender.sendMessage(ChatColor.GREEN + "" + "[P-Tracker] IP Address \""+ ChatColor.UNDERLINE + IP + ChatColor.RESET + ChatColor.GREEN + "\" is associated with the following "+ names +" account(s):");
 			String line;
 			for(String name:acctList) {
@@ -318,6 +329,9 @@ public class SQLiteDatabase extends Database {
 				
 					// Get the other accounts linked with these IP addresses.
 				thisIP = rs.getString("ip");
+				if ( plugin.untraceableIP.contains( thisIP ) )
+					continue;
+				
 				ps	= conn.prepareStatement(
 						"SELECT `accountname` " +
 						"FROM `"+ table + "` " +
@@ -333,6 +347,7 @@ public class SQLiteDatabase extends Database {
 								acctList[names] = rs2.getString("accountname");
 								names++;
 							}
+							else break;
 						}
 					}
 				}

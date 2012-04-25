@@ -49,7 +49,8 @@ public class PlayerTracker extends JavaPlugin {
 	boolean minebans;
 	private MineBansIntegration mineConn;
 	
-	public List<String> untraceable;
+	public List<String> untraceable = new ArrayList<String>();
+	public List<String> untraceableIP = new ArrayList<String>();
 	
 	Database db;
 	public Banlist banlist;
@@ -61,19 +62,22 @@ public class PlayerTracker extends JavaPlugin {
     	new File(maindir).mkdir();
     	setupConfig();
     	
-    	this.localdb = config.getBoolean("local-db", false);
+    	this.localdb = config.getBoolean("local-db", true);
     	this.mysql = config.getBoolean("mysql-enable", false);
     	this.mcbans = config.getBoolean("mcbans-enable", false);
     	this.mcbouncer = config.getBoolean("mcbouncer-enable", false);
     	this.minebans = config.getBoolean("minebans-enable", false);
     	
-    	untraceable = config.getStringList( "untraceable-players" );
-
-    	for(int i=0,l=untraceable.size();i<l;++i)
-    	{
-    	  untraceable.add(untraceable.remove(0).toLowerCase());
+    	List<String> untraceable_tmp = config.getStringList( "untraceable" );
+log.warning(untraceable_tmp.toString());
+    	for(int i=0,l=untraceable_tmp.size();i<l;++i) {
+    		String thisEntry = untraceable_tmp.remove(0);
+    		
+    		if ( thisEntry.matches("(?:\\d{1,3}\\.){3}\\d{1,3}") )
+    			untraceableIP.add( thisEntry );
+    		else
+    			untraceable.add( thisEntry.toLowerCase() );
     	}
-
     	
         if ( localdb ) {
         	
@@ -182,17 +186,27 @@ public class PlayerTracker extends JavaPlugin {
     	log.info("[P-Tracker] Player-Tracker has been enabled.");
     }
     public void setupConfig() {
-        this.config = getConfig();
-        config.options().copyDefaults(true);
-        saveConfig();
+        this.config = this.getConfig();
+    	config.options().copyDefaults(true);
+        if ( config.contains("untraceable-players") ) {
+        		// config from before 1.1.7
+        	List<String> transfer = config.getStringList( "untraceable-players" );
+        	config.set( "untraceable", transfer );
+        	config.set( "untraceable-players", null );
+        	saveConfig();
+        	this.reloadConfig();
+        }
+        else
+        	saveConfig();
 
     }
      
     public void onDisable(){ 
-    	if ( config.getBoolean("local-db", false) )
+    	if ( localdb )
     		db.disconnect();
-    	if ( banlist.isFig() )
+    	if ( ( banlist != null ) && ( banlist.isFig() ) )
     		( (FigAdminBanlist) banlist ).disableFig();
+    	saveConfig();
     }
 
     public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args){
@@ -254,19 +268,41 @@ public class PlayerTracker extends JavaPlugin {
     	return false; 
     }
 
-    private boolean IPTrack( String ip, CommandSender sender, boolean IPdisp ) {
-		TrackerRunnables ipTrack1 = new TrackerRunnables( ip, sender, IPdisp) {
-			public void run() {
-				if ( localdb ) {
-		    		db.IPTrack(ip, sender, IPdisp);
-		    	}
-		    	if ( mcbouncer ) {
-		    		//bouncerConn.IPTrack( IP );
-		    	}
-		    	return;
-			}
-		};
-		new Thread(ipTrack1).start();
+    private boolean IPTrack( String ip, CommandSender sender, boolean IPdisp ) {   
+    	boolean override = false;
+    	if ( sender instanceof Player ) {
+	    	Player player = (Player) sender;
+	    	if ( player.hasPermission("playertracker.hidetracks.override") ) {
+	    		override = true;
+	    	}
+    	}
+    	else
+    		override = true;
+    	
+    	
+    	if ( ( !override ) && ( untraceableIP.contains( ip ) ) ) {
+    		if ( localdb ) {
+				sender.sendMessage(ChatColor.GREEN + "[P-Tracker] IP Address \""+ ChatColor.UNDERLINE + ip + ChatColor.RESET + ChatColor.GREEN + "\" is not associated with any known accounts.");
+    		}
+	    	/*if ( ( mcbouncer ) || ( mcbans ) || ( minebans ) ) {
+				sender.sendMessage(ChatColor.GREEN + "[P-Tracker] Player \""+ ChatColor.UNDERLINE + playername + ChatColor.RESET + ChatColor.GREEN + "\" has no known global bans.");
+	    	}*/
+    		return true;
+    	}
+    	else {
+			TrackerRunnables ipTrack1 = new TrackerRunnables( ip, sender, IPdisp ) {
+				public void run() {
+					if ( localdb ) {
+			    		db.IPTrack(ip, sender, IPdisp);
+			    	}
+			    	if ( mcbouncer ) {
+			    		//bouncerConn.IPTrack( IP );
+			    	}
+			    	return;
+				}
+			};
+			new Thread(ipTrack1).start();
+    	}
     	return true;
     }
     private boolean PlayerTrack( String playername, CommandSender sender, boolean wildcard, boolean IPdisp ) {
@@ -285,7 +321,7 @@ public class PlayerTracker extends JavaPlugin {
     		if ( localdb ) {
 				sender.sendMessage(ChatColor.GREEN + "[P-Tracker] Player \""+ ChatColor.UNDERLINE + playername + ChatColor.RESET + ChatColor.GREEN + "\" is not associated with any known accounts.");
     		}
-	    	if ( ( mcbouncer ) || ( mcbans ) ) {
+	    	if ( ( mcbouncer ) || ( mcbans ) || ( minebans ) ) {
 				sender.sendMessage(ChatColor.GREEN + "[P-Tracker] Player \""+ ChatColor.UNDERLINE + playername + ChatColor.RESET + ChatColor.GREEN + "\" has no known global bans.");
 	    	}
     		return true;
@@ -393,46 +429,51 @@ public class PlayerTracker extends JavaPlugin {
 
 	// Add somebody to the config list of hidden players
 public boolean hideAccount( String playername, CommandSender sender ) {
-	untraceable = config.getStringList( "untraceable-players" );
-	untraceable.add( playername );
-	//this.getConfig().set( "untraceable-players", untraceable.toArray() //.asList(untraceable) );
-	config.set( "untraceable-players", untraceable );
+	List<String> temp = new ArrayList<String>( untraceableIP );
+	temp.addAll(untraceable);
+		
+log.warning(temp.toString());
+	temp.add( playername );
+log.warning(temp.toString());
+
+	config.set( "untraceable", temp );
 	this.saveConfig();
-	for(int i=0,l=untraceable.size();i<l;++i)
-	{
-	  untraceable.add(untraceable.remove(0).toLowerCase());
-	}
-	sender.sendMessage(ChatColor.GREEN + "[P-Tracker] Successfully added " + ChatColor.UNDERLINE + playername + ChatColor.RESET + ChatColor.GREEN + " to the hidden players list.");
+	
+	if ( playername.matches("(?:\\d{1,3}\\.){3}\\d{1,3}") )
+		untraceableIP.add( playername );
+	else
+		untraceable.add( playername.toLowerCase() );
+
+	sender.sendMessage(ChatColor.GREEN + "[P-Tracker] Successfully added " + ChatColor.UNDERLINE + playername + ChatColor.RESET + ChatColor.GREEN + " to the hidden players/IPs list.");
 	return true;
 }
 	// Remove somebody from the config list of hidden players
 	public boolean unhideAccount( String playername, CommandSender sender ) {
-		List<String> UTList = config.getStringList( "untraceable-players" );
-		untraceable.clear();
-		String thisName;
-		boolean changed = false;
-		for(int i=0,l=UTList.size();i<l;++i) {
-			thisName = UTList.remove(0); 
-			if ( !thisName.equalsIgnoreCase( playername ) ) {
-				UTList.add(thisName);
-				untraceable.add( thisName.toLowerCase() );
-			} else {
-				changed = true;
-			}
-			  
-		}
-		config.set( "untraceable-players", UTList );
-		this.saveConfig();
-		if ( changed ) 
+		List<String> UTList = new ArrayList<String>( untraceableIP );
+		UTList.addAll(untraceable);
+		
+		
+		if ( UTList.contains( playername.toLowerCase() ) ) {
+			if ( playername.matches("(?:\\d{1,3}\\.){3}\\d{1,3}") )
+				untraceableIP.remove( playername );
+			else
+				untraceable.remove( playername.toLowerCase() );
+			
+			UTList.remove( playername.toLowerCase() );
 			sender.sendMessage(ChatColor.GREEN + "[P-Tracker] Successfully removed " + ChatColor.UNDERLINE + playername + ChatColor.RESET + ChatColor.GREEN + " from the hidden players list.");
+		}
 		else 
 			sender.sendMessage(ChatColor.GREEN + "[P-Tracker] Failed to removed " + ChatColor.UNDERLINE + playername + ChatColor.RESET + ChatColor.GREEN + " from the hidden players list.");
+		
+		config.set( "untraceable", UTList );
+		this.saveConfig();
 		
 		return true;
 	}
 	@SuppressWarnings("unchecked")
 	public boolean listHiddenAccounts( CommandSender sender ) {
 		sender.sendMessage(ChatColor.GREEN + "[P-Tracker] Untraceable Players: "+ Arrays.asList(untraceable) );
+		sender.sendMessage(ChatColor.GREEN + "[P-Tracker] Untraceable IPs: "+ Arrays.asList(untraceableIP) );
 		return true;
 	}
 }

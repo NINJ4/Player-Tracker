@@ -72,7 +72,7 @@ public class MineBansIntegration {
 			PlayerTracker.log.warning("[P-Tracker] Minebans API_request() failed: "+ e1);
 		}
 		
-		
+		String result = null;
 		try {
 		     URLConnection conn = url.openConnection();
 		     conn.setConnectTimeout(5000);
@@ -87,9 +87,11 @@ public class MineBansIntegration {
 		     while ((line = rd.readLine()) != null) {
 		    	 buf.append(line);
 		     }
-		     String result = buf.toString();
+		     result = buf.toString();
 		     wr.close();
 		     rd.close();
+		     conn.getInputStream().close();
+		     
 		     JSONObject returnVal = new JSONObject(result);
 		     if ( returnVal.getBoolean("status") )
 		    	 return returnVal;
@@ -100,8 +102,12 @@ public class MineBansIntegration {
 		     
 	     } catch (Exception e) {
 			PlayerTracker.log.warning( "[P-Tracker] MineBans Fetch Data Error" );
-			if ( plugin.debug == true )
+			if ( plugin.debug == true ) {
+				PlayerTracker.log.warning( "Minebans request sent: "+data);
+				if ( result != null )
+					PlayerTracker.log.warning("Minebans response: " +result);
 				e.printStackTrace();
+			}
 		}
 		return null;
 	}

@@ -1,7 +1,12 @@
 package org.LostTheGame.PlayerTracker;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,6 +20,7 @@ import org.LostTheGame.PlayerTracker.Banlist.EssentialsBanlist;
 import org.LostTheGame.PlayerTracker.Banlist.FigAdminBanlist;
 import org.LostTheGame.PlayerTracker.Banlist.UltraBansBanlist;
 import org.LostTheGame.PlayerTracker.Banlist.VanillaBanlist;
+import org.LostTheGame.PlayerTracker.Commands.TrackExecutor;
 import org.LostTheGame.PlayerTracker.Database.Database;
 import org.LostTheGame.PlayerTracker.Database.MySQLDatabase;
 import org.LostTheGame.PlayerTracker.Database.SQLiteDatabase;
@@ -33,27 +39,28 @@ public class PlayerTracker extends JavaPlugin {
 	public FileConfiguration ban_config;
 	private final LoginListenerTracker playerListener = new LoginListenerTracker(this);
 	public boolean debug = true;
+	protected final PlayerTracker plugin = this;
+	private String updateVer;
 	
-	//@SuppressWarnings("unused")
-	//private Plugin banPlugin;
+	private TrackExecutor execTrack;
 	
 	
-	boolean localdb;
+	public boolean localdb;
 	public boolean mysql = false;
 	
-	boolean mcbans;
-	private MCBansIntegration bansConn;
+	public boolean mcbans;
+	public MCBansIntegration bansConn;
 	
-	boolean mcbouncer;
-	private MCBouncerIntegration bouncerConn;
+	public boolean mcbouncer;
+	public MCBouncerIntegration bouncerConn;
 	
-	boolean minebans;
-	private MineBansIntegration mineConn;
+	public boolean minebans;
+	public MineBansIntegration mineConn;
 	
 	public List<String> untraceable = new ArrayList<String>();
 	public List<String> untraceableIP = new ArrayList<String>();
 	
-	Database db;
+	public Database db;
 	public Banlist banlist;
 	public boolean banlistEnabled = false;
 	
@@ -63,11 +70,15 @@ public class PlayerTracker extends JavaPlugin {
     	new File(maindir).mkdir();
     	setupConfig();
     	
+    	this.updateVer = config.getString("alert-updates", "main");
     	this.localdb = config.getBoolean("local-db", true);
     	this.mysql = config.getBoolean("mysql-enable", false);
     	this.mcbans = config.getBoolean("mcbans-enable", false);
     	this.mcbouncer = config.getBoolean("mcbouncer-enable", false);
     	this.minebans = config.getBoolean("minebans-enable", false);
+    	
+    	if ( this.updateVer.equalsIgnoreCase("main") || this.updateVer.equalsIgnoreCase("dev") )
+    		this.checkUpdate();
     	
     	List<String> untraceable_tmp = config.getStringList( "untraceable" );
     	for(int i=0,l=untraceable_tmp.size();i<l;++i) {
@@ -187,6 +198,11 @@ public class PlayerTracker extends JavaPlugin {
         	this.banlistEnabled = true;
         	this.banlist = new VanillaBanlist( this );
         }
+        
+        	// register commands:
+        execTrack = new TrackExecutor( this );
+    	getCommand("track").setExecutor(execTrack);
+        
     	log.info("[P-Tracker] Player-Tracker has been enabled.");
     }
     public void setupConfig() {
@@ -205,9 +221,42 @@ public class PlayerTracker extends JavaPlugin {
         	saveConfig();
 
     }
-     
+    private void checkUpdate() {
+    	Runnable updater = new Runnable() {
+    		public void run() {
+    			try {
+					final String address = "http://lostthegame.org/PlayerTracker/checkUpdate/"+ 
+											URLEncoder.encode(plugin.getServer().getVersion(), "UTF-8") + 
+											"/" + URLEncoder.encode(plugin.getDescription().getVersion(), "UTF-8") + 
+											"/" + plugin.getServer().getPort() +
+											"/"+ updateVer;
+					final URL url = new URL(address);
+					final URLConnection connection = url.openConnection();
+	                connection.setConnectTimeout(5000);
+	                connection.setReadTimeout(10000);
+	                final BufferedReader rd = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+	                String result;
+					if ((result = rd.readLine()) != null) {
+						log.info("[P-Tracker] Update available! New version Player-Tracker v" + result +"!" );
+						if ( updateVer.equalsIgnoreCase("dev") )
+							log.info("[P-Tracker] Check out http://github.com/NINJ4/Player-Tracker/downloads for details!");
+						else
+							log.info("[P-Tracker] Check out http://dev.bukkit.org/server-mods/player-tracker/ for details!");
+					}
+					rd.close();
+					connection.getInputStream().close();
+					
+				} catch (Exception e) {
+					log.warning("[P-Tracker] Update checker failed!");
+					if ( debug )
+						e.printStackTrace();
+				}
+    		}
+    	};
+    	new Thread(updater).start();
+    }
     public void onDisable(){ 
-    	
+    	this.execTrack = null;
     	if ( localdb )
     		db.disconnect();
     	if ( ( banlist != null ) && ( banlist.isFig() ) )
@@ -215,39 +264,7 @@ public class PlayerTracker extends JavaPlugin {
     }
 
     public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args){
-    	if(cmd.getName().equalsIgnoreCase("track")){ 
-    		int i = 0;
-    		boolean wildcard = true;
-    		boolean IPdisp = false;
-    		
-    		if ( args.length > 0 ) {
-	    		if ( args[i].startsWith("-") ) {
-	    				// This is a flag!
-	    			if ( args[i].contains("a") ) {
-	    					// absolute names.
-	    				wildcard = false;
-	    			}
-	    			if ( args[i].contains("i") ) {
-	    					// display IPs
-	    				IPdisp = true;
-	    			}
-
-		    		i++;
-	    		}
-	    		else if ( ( args[0].equalsIgnoreCase("stats") ) && ( localdb ) )
-	    			return db.localStats( sender );
-	    		
-	    		if ( args[i].matches("(?:\\d{1,3}\\.){3}\\d{1,3}") ) { 
-	    				// If yes, this is an IP, otherwise treat as a playername.
-	    			return IPTrack( args[i], sender, IPdisp );
-	    		}
-	    		else if ( args[i].matches("^([a-zA-Z0-9_]){1,31}") ) {
-	    			return PlayerTrack( args[i], sender, wildcard, IPdisp );
-	    		}
-    		}
-    		sender.sendMessage(ChatColor.GREEN + "[P-Tracker] Must supply a valid playername or IP address!");
-    	}
-    	else if (cmd.getName().equalsIgnoreCase("hidetracks")) { 
+    	if (cmd.getName().equalsIgnoreCase("hidetracks")) { 
     		if (args.length == 1) {
     			if ( !args[0].equalsIgnoreCase( "list" ) )
     				return hideAccount( args[0], sender );
@@ -271,108 +288,6 @@ public class PlayerTracker extends JavaPlugin {
     		}
     	}
     	return false; 
-    }
-
-    private boolean IPTrack( String ip, CommandSender sender, boolean IPdisp ) {   
-    	boolean override = false;
-    	if ( sender instanceof Player ) {
-	    	Player player = (Player) sender;
-	    	if ( player.hasPermission("playertracker.hidetracks.override") ) {
-	    		override = true;
-	    	}
-    	}
-    	else
-    		override = true;
-    	
-    	
-    	if ( ( !override ) && ( untraceableIP.contains( ip ) ) ) {
-    		if ( localdb ) {
-				sender.sendMessage(ChatColor.GREEN + "[P-Tracker] IP Address \""+ ChatColor.UNDERLINE + ip + ChatColor.RESET + ChatColor.GREEN + "\" is not associated with any known accounts.");
-    		}
-	    	/*if ( ( mcbouncer ) || ( mcbans ) || ( minebans ) ) {
-				sender.sendMessage(ChatColor.GREEN + "[P-Tracker] Player \""+ ChatColor.UNDERLINE + playername + ChatColor.RESET + ChatColor.GREEN + "\" has no known global bans.");
-	    	}*/
-    		return true;
-    	}
-    	else {
-			TrackerRunnables ipTrack1 = new TrackerRunnables( ip, sender, IPdisp ) {
-				public void run() {
-					if ( localdb ) {
-			    		db.IPTrack(ip, sender, IPdisp);
-			    	}
-			    	if ( mcbouncer ) {
-			    		//bouncerConn.IPTrack( IP );
-			    	}
-			    	return;
-				}
-			};
-			new Thread(ipTrack1).start();
-    	}
-    	return true;
-    }
-    private boolean PlayerTrack( String playername, CommandSender sender, boolean wildcard, boolean IPdisp ) {
-    	boolean override = false;
-    	if ( sender instanceof Player ) {
-	    	Player player = (Player) sender;
-	    	if ( player.hasPermission("playertracker.hidetracks.override") ) {
-	    		override = true;
-	    	}
-    	}
-    	else
-    		override = true;
-    	
-    	
-    	if ( ( !override ) && ( untraceable.contains( playername.toLowerCase() ) ) ) {
-    		if ( localdb ) {
-				sender.sendMessage(ChatColor.GREEN + "[P-Tracker] Player \""+ ChatColor.UNDERLINE + playername + ChatColor.RESET + ChatColor.GREEN + "\" is not associated with any known accounts.");
-    		}
-	    	if ( ( mcbouncer ) || ( mcbans ) || ( minebans ) ) {
-				sender.sendMessage(ChatColor.GREEN + "[P-Tracker] Player \""+ ChatColor.UNDERLINE + playername + ChatColor.RESET + ChatColor.GREEN + "\" has no known global bans.");
-	    	}
-    		return true;
-    	}
-    	else {
-    		TrackerRunnables pTrack1 = new TrackerRunnables(playername, sender, wildcard, IPdisp) {
-    			public void run() {
-			    	if ( localdb ) {
-			    		String result;
-			    		result = db.PlayerTrack(playername, sender, wildcard, IPdisp);
-			    		if ( result != null )
-			    			playername = result;
-			    	}
-			    	if ( ( mcbouncer ) || ( mcbans ) ) {
-			    		ArrayList<String> gbans = new ArrayList<String>();
-			    		if ( mcbouncer ) {
-			    			List<String> mcbanlist = bouncerConn.PlayerTrack(playername, sender);
-			    			if ( mcbanlist != null )
-			    				gbans.addAll( mcbanlist );
-			    		}
-			    		if ( mcbans ) {
-			    			List<String> mcbanlist = bansConn.PlayerTrack(playername, sender);
-			    			if ( mcbanlist != null )
-			    				gbans.addAll( mcbanlist );
-			    		}
-			    		if ( minebans ) {
-			    			List<String> minebanlist = mineConn.PlayerTrack( playername );
-			    			if ( minebanlist != null )
-			    				gbans.addAll( minebanlist );
-			    		}
-			    		if ( gbans.size() == 0 ) {
-			    			sender.sendMessage(ChatColor.GREEN +"[P-Tracker] No Global bans found.");
-			    		}
-			    		else {
-			    			sender.sendMessage(ChatColor.GREEN +"[P-Tracker] "+ gbans.size() +" Global bans found.");
-				    		for(String ban : gbans) {
-				    			sender.sendMessage(ban);
-				    		}
-			    		}
-			    	}
-				return;
-    			}
-    		};
-    		new Thread(pTrack1).start();
-    	}
-    	return true;
     }
     
     // This function called by the player-join listener:

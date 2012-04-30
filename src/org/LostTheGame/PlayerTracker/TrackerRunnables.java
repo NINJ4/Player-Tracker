@@ -6,19 +6,24 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public abstract class TrackerRunnables implements Runnable {
-	protected String playername;
+	protected String playerORip;
 	protected CommandSender sender;
 	protected boolean wildcard;
 	protected boolean IPdisp;
+	protected boolean override;
+	protected boolean recursive;
 	protected String ip;
+	protected String playername;
 	protected ArrayList<Player> notifyUs;
 	
 		// used for playerTrack
-	public TrackerRunnables( String playername, CommandSender sender, boolean wildcard, boolean IPdisp ) {
-		this.playername = playername;
-		this.sender = sender;
-		this.wildcard = wildcard;
+	public TrackerRunnables( String playerORip, CommandSender sender, boolean IPdisp, boolean recursive, boolean override, boolean wildcard ) {
+		this.playerORip = playerORip;
 		this.IPdisp = IPdisp;
+		this.recursive = recursive;
+		this.override = override;
+		this.wildcard = wildcard;
+		this.sender = sender;
 	}
 	
 		// used for addTracks:

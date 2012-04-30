@@ -2,12 +2,17 @@ package org.LostTheGame.PlayerTracker.Database;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
+import org.LostTheGame.PlayerTracker.PlayerTracker;
 import org.bukkit.command.CommandSender;
 
 public abstract class Database {
 	private Connection conn = null;
 	public boolean initialized;
+	protected boolean isMYSQL;
+	String table;
+	PlayerTracker plugin;
 
 	public void addTracks( String playername, String IP ) {
 		//add some tracks to the database.
@@ -23,13 +28,12 @@ public abstract class Database {
 				e.printStackTrace();
 			}
     }
-    public String PlayerTrack( String playername, CommandSender sender, boolean wildcard, boolean IPdisp ) {
-    	// track players
-    	return "";
+    public ArrayList<String> PlayerTrack( String playername, boolean IPdisp, boolean recursive, boolean override, boolean wildcard ) {    	// track players
+    	return new ArrayList<String>();
     }
-    public boolean IPTrack( String IP, CommandSender sender, boolean IPdisp ) {
+    public ArrayList<String> IPTrack( String ipaddr, boolean IPdisp, boolean recursive, boolean override ) {
     	// track IPs
-    	return false;
+    	return new ArrayList<String>();
     }
     public int AliasCount( String playername ) {
     	// count aliases
@@ -37,6 +41,9 @@ public abstract class Database {
     }
     public boolean localStats( CommandSender sender ) {
     	return false;
+    }
+    public String wildcardMatch( String playername, boolean override ) {
+    	return null;
     }
     public void cleanUp() {
     	// clean up old entries in the db

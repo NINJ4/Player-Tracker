@@ -10,13 +10,13 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.logging.Level;
 
 import org.LostTheGame.PlayerTracker.PlayerTracker;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 
 public class SQLiteDatabase extends Database {
 	public String location;
@@ -102,21 +102,39 @@ public class SQLiteDatabase extends Database {
 			}
 		}
 	}
-    public String PlayerTrack( String playername, CommandSender sender, boolean wildcard, boolean IPdisp ) {
+	
+    public String wildcardMatch( String playername, boolean override ) {
+    	PreparedStatement ps = null;
+    	ResultSet rs = null;
+    	try {
+			ps	= conn.prepareStatement(
+					"SELECT `accountname` " +
+					"FROM `"+ table + "` " +
+					"WHERE LOWER(`accountname`) LIKE ('%' || ? || '%') "+
+					"ORDER BY `time` DESC " +
+					"LIMIT 0, 1");
+			ps.setString ( 1, playername.toLowerCase() );
+			rs = ps.executeQuery();
+			if ( !rs.next() )
+				return null;
+			else {
+				String newname = rs.getString("accountname");
+				if ( ( plugin.untraceable.contains( playername.toLowerCase() ) ) && ( !override ) )
+					return null;
+				
+				return newname;				
+			}
+    	} catch (SQLException ex) {
+			PlayerTracker.log.log(Level.SEVERE, "[P-Tracker] Couldn't execute SQLite statement: ", ex);
+		}
+    	return null;
+    }
 
-    	boolean override = false;
-    	if ( sender instanceof Player ) {
-	    	Player player = (Player) sender;
-	    	if ( player.hasPermission("playertracker.hidetracks.override") ) {
-	    		override = true;
-	    	}
-    	}
-    	else // must be console user!
-    		override = true;
+    public ArrayList<String> PlayerTrack( String playername, boolean IPdisp, boolean recursive, boolean override, boolean wildcard ) {
+    	ArrayList<String> output = new ArrayList<String>();
     	
     	PreparedStatement ps = null;
     	ResultSet rs = null;
-    	ResultSet rs2 = null;
 		try {
 			ps	= conn.prepareStatement(
 					"SELECT `ip` " +
@@ -125,248 +143,113 @@ public class SQLiteDatabase extends Database {
 					"ORDER BY `time` DESC");
 			ps.setString ( 1, playername.toLowerCase() );
 			rs = ps.executeQuery();
-
-			int names = 0;
-			int ips = 0;
-			String thisIP = "";
-			String[] acctList = new String[20];
-			String[] IPlist = new String[20];
+			
+			LinkedHashSet<String> ips = new LinkedHashSet<String>();
 			while( rs.next() ) {
+				if ( ( !plugin.untraceableIP.contains( rs.getString("ip") ) ) || ( override ) )
+					ips.add( rs.getString("ip") );
 				
-					// Get the other accounts linked with these IP addresses.
-				thisIP = rs.getString("ip");
-				if ( ( !override ) && ( plugin.untraceableIP.contains( thisIP ) ) )
-					continue;
-				
-				ps	= conn.prepareStatement(
-						"SELECT `accountname` " +
-						"FROM `"+ table + "` " +
-						"WHERE `ip` LIKE '"+ thisIP +"' " +
-						"AND LOWER(`accountname`) != ?" +
-						"ORDER BY `time` DESC");
-				ps.setString ( 1, playername.toLowerCase() );
-				rs2 = ps.executeQuery();
-				while( rs2.next() ) {
-					if ( !Arrays.asList( acctList ).contains( rs2.getString("accountname") ) ) {
-						if ( ( override ) || ( !plugin.untraceable.contains( rs2.getString("accountname").toLowerCase() ) ) ) {
-							if ( names < 20 ) {
-								acctList[names] = rs2.getString("accountname");
-								IPlist[names] = thisIP;
-								names++;
-							}
-						}
-					}
-				}
-				
-				ips++;
+				//	output.addAll( IPRTrack( rs.getString("ip"), wildcard, IPdisp, recursive, override ) );
 			}
-			if ( ( ips == 0 ) && ( wildcard ) ) {
-				sender.sendMessage(ChatColor.GREEN + "" + "[P-Tracker] No exact matches, attempting wildcard search.");
-				ps	= conn.prepareStatement(
-						"SELECT `accountname` " +
-						"FROM `"+ table + "` " +
-						"WHERE LOWER(`accountname`) LIKE ('%' || ? || '%') " +
-						"ORDER BY `time` DESC " +
-						"LIMIT 0, 1"); // limit to one match!
-				ps.setString ( 1, playername.toLowerCase() );
-				rs = ps.executeQuery();
+			
+			if ( ips.size() == 0 )
+				return null;
 
-				if ( !rs.next() ) {
-					sender.sendMessage(ChatColor.GREEN + "" + "[P-Tracker] No accounts match partially with \""+ playername +"\"");
-					rs.close();
-					return null;
-				}
-				else {
-					playername = rs.getString("accountname");
-			    	if ( ( !override ) && ( plugin.untraceable.contains( playername.toLowerCase() ) ) ) {
-							sender.sendMessage(ChatColor.GREEN + "" + "[P-Tracker] Player \""+ ChatColor.UNDERLINE + playername + ChatColor.RESET + ChatColor.GREEN + "\" is not associated with any known accounts.");
-							rs.close();
-							return playername;
-			    	}
-				}
-				
-				ps	= conn.prepareStatement(
-						"SELECT `ip` " +
-						"FROM `"+ table + "` " +
-						"WHERE LOWER(`accountname`) LIKE ? " +
-						"ORDER BY `time` DESC"); // limit to one match!
-				ps.setString ( 1, playername.toLowerCase() );
-				rs = ps.executeQuery();
-				
-				while( rs.next() ) {
+			java.util.Iterator<String> ips_itr = ips.iterator();
+			
+			LinkedHashSet<String> names = new LinkedHashSet<String>();
+			names.add( playername );
+
+			while ( ips_itr.hasNext() ) {
+				names.addAll( IPTrack( ips_itr.next(), IPdisp, recursive, override ) );
+			}
+			if ( recursive ) { // OH GOD OH GOD OH GOD
+				LinkedHashSet<String> names_spent = new LinkedHashSet<String>();
+				names_spent.add( playername );
+				java.util.Iterator<String> names_itr = names.iterator();
+				while ( names_itr.hasNext() ) {
 					
-						// Get the other accounts linked with these IP addresses.
-					thisIP = rs.getString("ip");
-					if ( ( !override ) && ( plugin.untraceableIP.contains( thisIP ) ) )
+					String thisName = names_itr.next();
+					if ( names_spent.contains( thisName ) )
 						continue;
 					
-					ps	= conn.prepareStatement(
-							"SELECT `accountname` " +
-							"FROM `"+ table + "` " +
-							"WHERE `ip` LIKE '"+ thisIP +"' " +
-							"AND LOWER(`accountname`) != ?" +
-							"ORDER BY `time` DESC");
-					ps.setString ( 1, playername.toLowerCase() );
-					rs2 = ps.executeQuery();
-					while( rs2.next() ) {
-						if ( !Arrays.asList( acctList ).contains( rs2.getString("accountname") ) ) {
-							if ( ( override ) || ( !plugin.untraceable.contains( rs2.getString("accountname").toLowerCase() ) ) ) {
-								if ( names < 20 ) {
-									acctList[names] = rs2.getString("accountname");
-									IPlist[names] = thisIP;
-									names++;
-								}
-							}
-						}
-					}
+					names_spent.add( thisName );
+					ArrayList<String> trackThis = PlayerTrack( thisName, IPdisp, false, override, false );
+					if ( trackThis == null ) continue;
 					
-					ips++;
+					if ( names.addAll( trackThis ) )
+						names_itr = names.iterator();
 				}
-				rs.close();
-				rs2.close();
 			}
-			if ( names == 0 ) {
-				sender.sendMessage(ChatColor.GREEN + "" + "[P-Tracker] Player \""+ ChatColor.UNDERLINE + playername + ChatColor.RESET + ChatColor.GREEN + "\" is not associated with any known accounts.");
-				return playername;
-			}
-			sender.sendMessage(ChatColor.GREEN + "" + "[P-Tracker] Player \""+ ChatColor.UNDERLINE + playername + ChatColor.RESET + ChatColor.GREEN + "\" is associated with the following "+ names +" account(s):");
-			String s = null;
-			int i = 0;
-			for(String name:acctList) {
-				if ( name != null ) {
-					s = ChatColor.DARK_GREEN + "   - " + ChatColor.UNDERLINE + name;
-					if ( plugin.banlistEnabled ) {
-						if ( plugin.banlist.isBanned( name ) )
-							s += ChatColor.RESET +""+ ChatColor.DARK_GREEN + "" + ChatColor.BOLD + " (BANNED)";
-					}
-					if ( IPdisp )
-						s += ChatColor.RESET +""+ ChatColor.DARK_GREEN +" ("+ IPlist[i] +")";
-					
-					sender.sendMessage( s );
-				}
-				i++;
-			}
-			return playername;
 			
-		} catch (SQLException ex) {
-			PlayerTracker.log.log(Level.SEVERE, "[P-Tracker] Couldn't execute SQL statement: ", ex);
-		}
-		return null;
-    }
-    public boolean IPTrack( String IP, CommandSender sender, boolean IPdisp ) {
+			
+			LinkedHashSet<String> names_check = new LinkedHashSet<String>(names);
+			java.util.Iterator<String> output_itr = names_check.iterator();
 
-    	boolean override = false;
-    	if ( sender instanceof Player ) {
-	    	Player player = (Player) sender;
-	    	if ( player.hasPermission("playertracker.hidetracks.override") ) {
-	    		override = true;
-	    	}
-    	}
-    	else // must be console user!
-    		override = true;
-    	
-    	PreparedStatement ps = null;
-    	ResultSet rs = null;
-		try {
-			int names = 0;
-			String[] acctList = new String[20];
-			
-			ps	= conn.prepareStatement(
-					"SELECT `accountname`,`ip` " +
-					"FROM `"+ table + "` " +
-					"WHERE `ip` LIKE '"+ IP +"' " +
-					"AND LOWER(`accountname`) != ?" +
-					"ORDER BY `time` DESC");
-			ps.setString ( 1, IP );
-			rs = ps.executeQuery();
-			while( rs.next() ) {
-				if ( !Arrays.asList( acctList ).contains( rs.getString("accountname") ) ) {
-					if ( ( override ) || ( !plugin.untraceable.contains( rs.getString("accountname").toLowerCase() ) ) ) {
-						acctList[names] = rs.getString("accountname");
-						names++;
-					}
-				}
+			while ( output_itr.hasNext() ) {
+				String thisName = output_itr.next();
+				if ( thisName.equalsIgnoreCase( playername ) )
+					names.remove( thisName );
+				
 			}
-			rs.close();
-			if ( names == 0 ) {
-				sender.sendMessage(ChatColor.GREEN + "" + "[P-Tracker] IP Address \""+ ChatColor.UNDERLINE + IP + ChatColor.RESET + ChatColor.GREEN + "\" is not associated with any known accounts.");
-				return true;
-			}
-			
-			sender.sendMessage(ChatColor.GREEN + "" + "[P-Tracker] IP Address \""+ ChatColor.UNDERLINE + IP + ChatColor.RESET + ChatColor.GREEN + "\" is associated with the following "+ names +" account(s):");
-			String line;
-			for(String name:acctList) {
-				if ( name != null ) {
-					line = ChatColor.DARK_GREEN + "   - " + ChatColor.UNDERLINE + name;
-					if ( plugin.banlistEnabled ) {
-						if ( plugin.banlist.isBanned( name ) )
-							line += ChatColor.RESET +""+ ChatColor.DARK_GREEN +""+ ChatColor.BOLD + " (BANNED)";
-					}
-					if ( IPdisp )
-						line += ChatColor.RESET +""+ ChatColor.DARK_GREEN +" ("+ IP +")";
-						
-					sender.sendMessage( line );
-				}
-			}
-			return true;
-			
-		} catch (SQLException ex) {
-			PlayerTracker.log.log(Level.SEVERE, "[P-Tracker] Couldn't execute SQL statement: ", ex);
-		}
-		return false;
-    }
-    public int AliasCount( String playername ) {
-    	PreparedStatement ps = null;
-    	ResultSet rs = null;
-    	ResultSet rs2 = null;
-		int names = 0;
-		try {
-			ps	= conn.prepareStatement(
-					"SELECT `ip` " +
-					"FROM `"+ table + "` " +
-					"WHERE LOWER(`accountname`) LIKE ? " +
-					"ORDER BY `time` DESC");
-			ps.setString ( 1, playername.toLowerCase() );
-			rs = ps.executeQuery();
 
-			int ips = 0;
-			String thisIP = "";
-			String[] acctList = new String[20];
-			while( rs.next() ) {
-				
-					// Get the other accounts linked with these IP addresses.
-				thisIP = rs.getString("ip");
-				if ( plugin.untraceableIP.contains( thisIP ) )
-					continue;
-				
-				ps	= conn.prepareStatement(
-						"SELECT `accountname` " +
-						"FROM `"+ table + "` " +
-						"WHERE `ip` LIKE '"+ thisIP +"' " +
-						"AND LOWER(`accountname`) != ?" +
-						"ORDER BY `time` DESC");
-				ps.setString ( 1, playername.toLowerCase() );
-				rs2 = ps.executeQuery();
-				while( rs2.next() ) {
-					if ( !Arrays.asList( acctList ).contains( rs2.getString("accountname") ) ) {
-						if ( !plugin.untraceable.contains( rs2.getString("accountname").toLowerCase() ) ) {
-							if ( names < 20 ) {
-								acctList[names] = rs2.getString("accountname");
-								names++;
-							}
-							else break;
-						}
-					}
-				}
-				
-				ips++;
-			}
-			rs.close();
-			rs2.close();
+			output.addAll( names );
+			
 		} catch (SQLException ex) {
 			PlayerTracker.log.log(Level.SEVERE, "[P-Tracker] Couldn't execute MySQL statement: ", ex);
 		}
-    	return names;
+    		
+    	return output;
+    }
+
+    public ArrayList<String> IPTrack( String ipaddr, boolean IPdisp, boolean recursive, boolean override ) {
+    	ArrayList<String> output = new ArrayList<String>();
+    	
+    	PreparedStatement ps = null;
+    	ResultSet rs = null;
+		try {
+			ps	= conn.prepareStatement(
+					"SELECT `accountname` " +
+					"FROM `"+ table + "` " +
+					"WHERE LOWER(`ip`) LIKE ? " +
+					"ORDER BY `time` DESC");
+			ps.setString ( 1, ipaddr );
+			rs = ps.executeQuery();
+
+			LinkedHashSet<String> names = new LinkedHashSet<String>();
+			while( rs.next() ) {
+				if ( ( !plugin.untraceable.contains( rs.getString("accountname") ) ) || ( override ) )
+					names.add( rs.getString("accountname")
+							+( ( IPdisp ) ? " ("+ ipaddr +")" : "" )
+					);
+				}
+			if ( recursive ) { // OH GOD OH GOD OH GOD
+				LinkedHashSet<String> names_spent = new LinkedHashSet<String>();
+				java.util.Iterator<String> names_itr = names.iterator();
+				while ( names_itr.hasNext() ) {
+					
+					String thisName = names_itr.next();
+					if ( names_spent.contains( thisName ) )
+						continue;
+					
+					names_spent.add( thisName );
+					if ( names.addAll( PlayerTrack( ( ( thisName.indexOf(" ") != -1 ) ? thisName.substring( 0, thisName.indexOf(" ") ) : thisName ), IPdisp, false, override, false ) ) )
+						names_itr = names.iterator();
+				}
+			}
+			output.addAll( names );
+		} catch (SQLException ex) {
+			PlayerTracker.log.log(Level.SEVERE, "[P-Tracker] Couldn't execute MySQL statement: ", ex);
+		}
+		
+		return output;
+    }
+    public int AliasCount( String playername ) {
+    	ArrayList<String> getNames = PlayerTrack( playername, false, false, false, false );
+    	if ( getNames == null )
+    		return 0;
+    	
+    	return getNames.size();
     }
 	public void addTracks( String playername, String IP ) {
     	PreparedStatement ps = null;

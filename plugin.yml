@@ -2,12 +2,12 @@ name: Player-Tracker
 main: org.LostTheGame.PlayerTracker.PlayerTracker
 author: NINJ4
 softdepend: [Essentials, CommandBook, FigAdmin, BanHammer, UltraBan]
-version: 1.1.8
+version: 1.2
 
 commands:
   track:
     description: Shows information about the target player.
-    usage: /track [-ia] <player|IP|stats>
+    usage: /track [-air] <player|IP|stats>
     permission: playertracker.track
     permission-message: You don't have permission.
   hidetracks:

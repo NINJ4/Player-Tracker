@@ -127,7 +127,13 @@ public class TrackExecutor implements CommandExecutor {
 			    			sender.sendMessage( ChatColor.GREEN + "[P-Tracker] IP Address \""+ ChatColor.UNDERLINE + playerORip + ChatColor.RESET + ChatColor.GREEN + "\" is associated with the following "+ rsize +" account(s):");
 
 				    		for ( int i = 0 ; i < rsize ; i++ ) {
-				    			sender.sendMessage( ChatColor.DARK_GREEN +"    - "+ result.remove(0) );
+				    			StringBuffer msg = new StringBuffer();
+				    			msg.append(ChatColor.DARK_GREEN +"    - ");
+				    			String player = result.remove(0);
+				    			msg.append( player );
+				    			if ( ( plugin.banlistEnabled ) && ( plugin.banlist.isBanned( player ) ) )
+				    				msg.append( ChatColor.BOLD + " (BANNED)");
+				    			sender.sendMessage( msg.toString() );
 				    		}
 			    		}
 			    		else
@@ -187,7 +193,13 @@ PlayerTracker.log.warning("override:"+override);
 				    			int rsize = result.size();
 				    			sender.sendMessage(ChatColor.GREEN +"[P-Tracker] "+ rsize +" account(s) are associated with \""+ ChatColor.UNDERLINE + playerORip + ChatColor.RESET + ChatColor.GREEN +"\"" );
 					    		for ( int i = 0 ; i < rsize ; i++ ) {
-					    			sender.sendMessage( ChatColor.DARK_GREEN +"    - "+ result.remove(0) );
+					    			StringBuffer msg = new StringBuffer();
+					    			msg.append(ChatColor.DARK_GREEN +"    - ");
+					    			String player = result.remove(0);
+					    			msg.append( player );
+					    			if ( ( plugin.banlistEnabled ) && ( plugin.banlist.isBanned( player ) ) )
+					    				msg.append( ChatColor.BOLD + " (BANNED)");
+					    			sender.sendMessage( msg.toString() );
 					    		}
 				    		}
 				    		else

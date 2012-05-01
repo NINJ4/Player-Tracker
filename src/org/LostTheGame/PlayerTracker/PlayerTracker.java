@@ -189,12 +189,19 @@ public class PlayerTracker extends JavaPlugin {
         	this.banlist = new EssentialsBanlist( this );
         }
         else if ( this.getServer().getPluginManager().isPluginEnabled("CommandBook") ) {
-        	log.info("[P-Tracker] CommandBook detected, attempting to use as banlist."); 
-        	this.banlistEnabled = true;
-        	this.banlist = new CommandBookBanlist( this );
+        	try {
+	        	this.banlist = new CommandBookBanlist( this );
+	    		this.banlistEnabled = true;
+    			log.info("[P-Tracker] CommandBook detected, attempting to use as banlist."); 
+        	} catch (Exception e) {
+            	log.info("[P-Tracker] CommandBook detected, but the bans component is disabled!."); 
+        	}
+
         }
-        else {
-        	log.info("[P-Tracker] no Banlist plugin detected, using Vanilla."); 
+        
+
+        if ( this.banlistEnabled == false ) {
+        	log.info("[P-Tracker] No Banlist plugin detected, using Vanilla."); 
         	this.banlistEnabled = true;
         	this.banlist = new VanillaBanlist( this );
         }

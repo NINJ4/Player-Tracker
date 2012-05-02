@@ -3,12 +3,12 @@ package org.LostTheGame.PlayerTracker.Commands;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.LostTheGame.PlayerTracker.MCBansIntegration;
-import org.LostTheGame.PlayerTracker.MCBouncerIntegration;
-import org.LostTheGame.PlayerTracker.MineBansIntegration;
 import org.LostTheGame.PlayerTracker.PlayerTracker;
 import org.LostTheGame.PlayerTracker.TrackerRunnables;
 import org.LostTheGame.PlayerTracker.Database.Database;
+import org.LostTheGame.PlayerTracker.RemoteIntegration.MCBansIntegration;
+import org.LostTheGame.PlayerTracker.RemoteIntegration.MCBouncerIntegration;
+import org.LostTheGame.PlayerTracker.RemoteIntegration.MineBansIntegration;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;

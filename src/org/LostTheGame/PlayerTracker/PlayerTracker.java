@@ -24,6 +24,9 @@ import org.LostTheGame.PlayerTracker.Commands.TrackExecutor;
 import org.LostTheGame.PlayerTracker.Database.Database;
 import org.LostTheGame.PlayerTracker.Database.MySQLDatabase;
 import org.LostTheGame.PlayerTracker.Database.SQLiteDatabase;
+import org.LostTheGame.PlayerTracker.RemoteIntegration.MCBansIntegration;
+import org.LostTheGame.PlayerTracker.RemoteIntegration.MCBouncerIntegration;
+import org.LostTheGame.PlayerTracker.RemoteIntegration.MineBansIntegration;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -152,7 +155,7 @@ public class PlayerTracker extends JavaPlugin {
 			if ( minebans )
 				log.info("[P-Tracker] MineBans connection successful.");
 			else
-				log.warning("[P-Tracker]: Can't initiate connection to MineBans!");
+				log.warning("[P-Tracker] Can't initiate connection to MineBans! Disabling Minebans integration!");
         }
         
         // enable our events

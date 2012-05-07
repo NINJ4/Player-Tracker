@@ -18,6 +18,9 @@ mcbans-API-key: 0
 mcbouncer-enable: false
 mcbouncer-API-key: 0
 
+glizer-enable: false
+glizer-API-key: 0
+
 untraceable:
   - Notch
   - 127.0.0.1

@@ -31,7 +31,7 @@ public class MineBansIntegration {
 	}
 	
 	public boolean init() {
-		if ( APIKEY == "0" ) {
+		if ( APIKEY.equals("0") ) {
 			PlayerTracker.log.severe("[P-Tracker] Invalid MineBans API-key (default setting has not been changed!)");
 			return false;
 		}

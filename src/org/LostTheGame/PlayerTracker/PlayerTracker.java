@@ -27,6 +27,7 @@ import org.LostTheGame.PlayerTracker.Database.SQLiteDatabase;
 import org.LostTheGame.PlayerTracker.RemoteIntegration.MCBansIntegration;
 import org.LostTheGame.PlayerTracker.RemoteIntegration.MCBouncerIntegration;
 import org.LostTheGame.PlayerTracker.RemoteIntegration.MineBansIntegration;
+import org.LostTheGame.PlayerTracker.RemoteIntegration.glizerIntegration;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -60,6 +61,9 @@ public class PlayerTracker extends JavaPlugin {
 	public boolean minebans;
 	public MineBansIntegration mineConn;
 	
+	public boolean glizer;
+	public glizerIntegration glizerConn;
+	
 	public List<String> untraceable = new ArrayList<String>();
 	public List<String> untraceableIP = new ArrayList<String>();
 	
@@ -79,6 +83,7 @@ public class PlayerTracker extends JavaPlugin {
     	this.mcbans = config.getBoolean("mcbans-enable", false);
     	this.mcbouncer = config.getBoolean("mcbouncer-enable", false);
     	this.minebans = config.getBoolean("minebans-enable", false);
+    	this.glizer = config.getBoolean("glizer-enable", false);
     	
     	if ( this.updateVer.equalsIgnoreCase("main") || this.updateVer.equalsIgnoreCase("dev") )
     		this.checkUpdate();
@@ -156,6 +161,15 @@ public class PlayerTracker extends JavaPlugin {
 				log.info("[P-Tracker] MineBans connection successful.");
 			else
 				log.warning("[P-Tracker] Can't initiate connection to MineBans! Disabling Minebans integration!");
+        }
+        if ( glizer ) {
+        	glizerConn = new glizerIntegration( this );
+        	
+			glizer = glizerConn.init();
+			if ( glizer )
+				log.info("[P-Tracker] glizer connection successful.");
+			else
+				log.warning("[P-Tracker] Can't initiate connection to glizer! Disabling glizer integration!");
         }
         
         // enable our events
@@ -246,7 +260,7 @@ public class PlayerTracker extends JavaPlugin {
 	                connection.setReadTimeout(10000);
 	                final BufferedReader rd = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 	                String result;
-					if ((result = rd.readLine()) != null) {
+					if ( ( (result = rd.readLine() ) != null ) && ( !result.startsWith("<") ) ) {
 						log.info("[P-Tracker] Update available! New version Player-Tracker v" + result +"!" );
 						if ( updateVer.equalsIgnoreCase("dev") )
 							log.info("[P-Tracker] Check out http://github.com/NINJ4/Player-Tracker/downloads for details!");
@@ -337,6 +351,11 @@ public class PlayerTracker extends JavaPlugin {
 			else
     			log.warning("[P-Tracker] Failed to get banCount from Minebans: unknown error!");
 
+		}
+		if ( glizer ) {
+			testint = glizerConn.banCount( playername );
+			if ( testint > -1 )
+				banCount += testint;
 		}
   
     	

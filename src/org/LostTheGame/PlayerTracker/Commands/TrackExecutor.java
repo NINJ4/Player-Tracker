@@ -9,6 +9,7 @@ import org.LostTheGame.PlayerTracker.Database.Database;
 import org.LostTheGame.PlayerTracker.RemoteIntegration.MCBansIntegration;
 import org.LostTheGame.PlayerTracker.RemoteIntegration.MCBouncerIntegration;
 import org.LostTheGame.PlayerTracker.RemoteIntegration.MineBansIntegration;
+import org.LostTheGame.PlayerTracker.RemoteIntegration.glizerIntegration;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -28,6 +29,9 @@ public class TrackExecutor implements CommandExecutor {
 	
 	boolean minebans;
 	private MineBansIntegration mineConn;
+	
+	boolean glizer;
+	private glizerIntegration glizerConn;
 
 	List<String> untraceable = new ArrayList<String>();
 	List<String> untraceableIP = new ArrayList<String>();
@@ -39,6 +43,8 @@ public class TrackExecutor implements CommandExecutor {
 		this.minebans = instance.minebans;
 		this.mcbans = instance.mcbans;
 		this.mcbouncer = instance.mcbouncer;
+		this.glizer = instance.glizer;
+		this.glizerConn = instance.glizerConn;
 		this.mineConn = instance.mineConn;
 		this.bansConn = instance.bansConn;
 		this.bouncerConn = instance.bouncerConn;
@@ -226,6 +232,11 @@ PlayerTracker.log.warning("override:"+override);
 			    			List<String> minebanlist = mineConn.PlayerTrack( playerORip );
 			    			if ( minebanlist != null )
 			    				gbans.addAll( minebanlist );
+			    		}
+			    		if ( glizer ) {
+			    			List<String> glizelist = glizerConn.PlayerTrack( playerORip );
+			    			if ( glizelist != null )
+			    				gbans.addAll( glizelist );
 			    		}
 			    		if ( gbans.size() == 0 ) {
 			    			sender.sendMessage(ChatColor.GREEN +"[P-Tracker] No Global bans found.");

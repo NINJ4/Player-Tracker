@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -68,17 +69,21 @@ public class MCBansIntegration {
 		rd.close();
 		return result;
 		
+		} catch (SocketTimeoutException e) {
+			PlayerTracker.log.warning( "[P-Tracker] MCBans Fetch Data Error: Timed Out!" );
 		} catch (Exception e) {
 			PlayerTracker.log.warning( "[P-Tracker] MCBans Fetch Data Error" );
-		if ( plugin.debug == true )
-			e.printStackTrace();
+			if ( plugin.debug == true )
+				e.printStackTrace();
 		}
-		return "";
+		return null;
 	}
 	
 	
 	public JSONObject getBans( String playername ) {
 		String s = request_from_api("player="+ playername +"&admin=server&exec=playerLookup");
+		if ( s == null )
+			return null;
 		try {
 			JSONObject json = new JSONObject(s);
 			return json;
@@ -95,7 +100,7 @@ public class MCBansIntegration {
 		JSONObject raw = getBans( playername );
 		try {
 			if ( raw == null )
-			return -1;
+			return 0;
 			
 			int banCount = raw.getInt("total");
 			if ( banCount == 0 ) {
@@ -114,6 +119,8 @@ public class MCBansIntegration {
 	public List<String> PlayerTrack( String playername, CommandSender sender ) {
 		JSONObject raw = getBans( playername );
 		ArrayList<String> output = new ArrayList<String>();
+		if ( raw == null )
+			return output;
 		try {
 			int banCount = raw.getInt("total");
 			if ( banCount < 1 )

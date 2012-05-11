@@ -33,9 +33,10 @@ public abstract class TrackerRunnables implements Runnable {
 	}
 	
 		// used for notifyLines
-	public TrackerRunnables( String playername, ArrayList<Player> notifyUs ) {
+	public TrackerRunnables( String playername, String ip, ArrayList<Player> notifyUs ) {
 		this.playername = playername;
 		this.notifyUs = notifyUs;
+		this.ip = ip;
 	}
 		
 		// used for IPTrack

@@ -32,27 +32,29 @@ public class LoginListenerTracker implements Listener {
 			new Thread(addT).start();
 		}
 		
-        Player[] players = plugin.getServer().getOnlinePlayers();
-        ArrayList<Player> notifyUs = new ArrayList<Player>();
-    
-	    for (Player user : players) {
-	    	if (user.hasPermission("playertracker.onJoin")) {
-	    		notifyUs.add(user);
-	        }
-	    }
-	    if ( notifyUs.size() > 0 ) {
-	    	TrackerRunnables Tnotify = new TrackerRunnables( playername, notifyUs ) {
-	    		public void run() {
-			    	String notify = plugin.getNotifyLine( playername );
-			    	if ( notify != null )
-				       	for (Player user : notifyUs ) {
-				       		user.sendMessage( ChatColor.YELLOW +"[P-Tracker] "+ notify );
-				       	}
-			    	
-			    	return;
-	    		}
-	    	};
-	    	new Thread( Tnotify ).start();
-	    }
+		if ( plugin.msgonJoin ) {
+	        Player[] players = plugin.getServer().getOnlinePlayers();
+	        ArrayList<Player> notifyUs = new ArrayList<Player>();
+	    
+		    for (Player user : players) {
+		    	if (user.hasPermission("playertracker.onJoin")) {
+		    		notifyUs.add(user);
+		        }
+		    }
+		    if ( notifyUs.size() > 0 ) {
+		    	TrackerRunnables Tnotify = new TrackerRunnables( playername, ip, notifyUs ) {
+		    		public void run() {
+				    	String notify = plugin.getNotifyLine( playername, ip );
+				    	if ( notify != null )
+					       	for (Player user : notifyUs ) {
+					       		user.sendMessage( ChatColor.YELLOW +"[P-Tracker] "+ notify );
+					       	}
+				    	
+				    	return;
+		    		}
+		    	};
+		    	new Thread( Tnotify ).start();
+		    }
+		}
     }
 }

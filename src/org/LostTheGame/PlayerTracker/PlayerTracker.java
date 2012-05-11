@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.naming.NamingException;
+
 import org.LostTheGame.PlayerTracker.Banlist.BanHammerBanlist;
 import org.LostTheGame.PlayerTracker.Banlist.Banlist;
 import org.LostTheGame.PlayerTracker.Banlist.CommandBookBanlist;
@@ -28,6 +30,7 @@ import org.LostTheGame.PlayerTracker.RemoteIntegration.MCBansIntegration;
 import org.LostTheGame.PlayerTracker.RemoteIntegration.MCBouncerIntegration;
 import org.LostTheGame.PlayerTracker.RemoteIntegration.MineBansIntegration;
 import org.LostTheGame.PlayerTracker.RemoteIntegration.glizerIntegration;
+import org.LostTheGame.PlayerTracker.Util.DNSBL;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -45,6 +48,9 @@ public class PlayerTracker extends JavaPlugin {
 	public boolean debug = true;
 	protected final PlayerTracker plugin = this;
 	private String updateVer;
+
+	public boolean checkproxies;
+	public boolean msgonJoin;
 	
 	private TrackExecutor execTrack;
 	
@@ -70,6 +76,7 @@ public class PlayerTracker extends JavaPlugin {
 	public Database db;
 	public Banlist banlist;
 	public boolean banlistEnabled = false;
+	public DNSBL dnsblChecker;
 	
 	public static Logger log = Logger.getLogger("Minecraft");
 	
@@ -84,6 +91,8 @@ public class PlayerTracker extends JavaPlugin {
     	this.mcbouncer = config.getBoolean("mcbouncer-enable", false);
     	this.minebans = config.getBoolean("minebans-enable", false);
     	this.glizer = config.getBoolean("glizer-enable", false);
+    	this.checkproxies = config.getBoolean("check-proxies", true);
+    	this.msgonJoin = config.getBoolean("enable-onJoin", true);
     	
     	if ( this.updateVer.equalsIgnoreCase("main") || this.updateVer.equalsIgnoreCase("dev") )
     		this.checkUpdate();
@@ -171,15 +180,32 @@ public class PlayerTracker extends JavaPlugin {
 			else
 				log.warning("[P-Tracker] Can't initiate connection to glizer! Disabling glizer integration!");
         }
-        
-        // enable our events
-		getServer().getPluginManager().registerEvents(playerListener, this);
     	
-        if ( ( !localdb ) && ( !mcbans ) && ( !mcbouncer ) ) {
+        if ( ( !localdb ) && ( !mcbans ) && ( !mcbouncer ) && ( !glizer ) && ( !minebans ) ) {
         	log.warning("[P-Tracker]: No databases in use, disabling plugin.");
         	this.getServer().getPluginManager().disablePlugin(this);
         	return;
         }
+        
+        	// create our DNSBL checker if we need one
+        if ( this.checkproxies ) {
+        	try {
+				this.dnsblChecker = new DNSBL();
+
+	        	this.dnsblChecker.addDNSBL("dnsbl.proxybl.org");
+	        	this.dnsblChecker.addDNSBL("http.dnsbl.sorbs.net");
+	        	this.dnsblChecker.addDNSBL("socks.dnsbl.sorbs.net");
+	        	this.dnsblChecker.addDNSBL("misc.dnsbl.sorbs.net");
+	        	this.dnsblChecker.addDNSBL("tor.dnsbl.sectoor.de");
+			} catch (NamingException e) {
+				plugin.checkproxies = false;
+				if ( plugin.debug )
+					e.printStackTrace();
+			}
+        }
+        
+        // enable our events
+		getServer().getPluginManager().registerEvents(playerListener, this);
         
         	// banlist figuring:
         if ( this.getServer().getPluginManager().isPluginEnabled("FigAdmin") ) {
@@ -315,9 +341,10 @@ public class PlayerTracker extends JavaPlugin {
     }
     
     // This function called by the player-join listener:
-    public String getNotifyLine( String playername ) {
+    public String getNotifyLine( String playername, String ip ) {
     	String aliases = "";
     	String gbans = "";
+    	String proxied = "";
 		int acount = 0;
     	if ( localdb ) {
     		if ( !untraceable.contains( playername.toLowerCase() ) ) {
@@ -361,19 +388,24 @@ public class PlayerTracker extends JavaPlugin {
     	
     	if ( banCount > 0 ) {
     		if ( acount < 1 )
-    			gbans = playername +" has "+ banCount +" Global bans.";
+    			gbans = playername +" has "+ banCount +" Global bans";
     		else 
-    			gbans = " and "+ banCount +" Global bans.";
+    			gbans = " and "+ banCount +" Global bans";
     	}
-    	else if ( aliases != "" )
-    		aliases += ".";
-    		
     	
+    	if ( this.checkproxies ) {
+    		if ( this.dnsblChecker.ipFound(ip) ) {
+    			if ( ( acount < 1 ) && ( banCount < 1 ) )
+    				proxied = playername +" is connected with a proxy.";
+    			else
+    				proxied = ", and has connected with a proxy.";
+    		}
+    	}
     	
-    	if ( ( aliases == "" ) && ( gbans  == "" ) )
+    	if ( ( aliases == "" ) && ( gbans == "" ) && ( proxied == "" ) )
     		return null;
     	else
-    		return aliases + gbans;
+    		return aliases + gbans + proxied +".";
     }
 
 	// Add somebody to the config list of hidden players

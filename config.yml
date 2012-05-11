@@ -1,4 +1,6 @@
 alert-updates: main
+check-proxies: true
+enable-onJoin: true
 
 local-db: true
 persistence-days: 60

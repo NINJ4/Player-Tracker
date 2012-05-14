@@ -28,7 +28,7 @@ public abstract class Database {
 				e.printStackTrace();
 			}
     }
-    public ArrayList<String> PlayerTrack( String playername, boolean IPdisp, boolean recursive, boolean override, boolean wildcard ) {    	// track players
+    public ArrayList<String> PlayerTrack( String playername, boolean IPdisp, boolean recursive, boolean override, boolean wildcard, boolean geolocate ) {    	// track players
     	return new ArrayList<String>();
     }
     public ArrayList<String> IPTrack( String ipaddr, boolean IPdisp, boolean recursive, boolean override ) {

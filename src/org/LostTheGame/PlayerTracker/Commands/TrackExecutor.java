@@ -221,9 +221,10 @@ public class TrackExecutor implements CommandExecutor {
     	else {
     		TrackerRunnables pTrack1 = new TrackerRunnables(playername, sender, IPdisp, recursive, override, wildcard, geolocate) {
     			public void run() {
+		    		String geoIP = null;
 			    	if ( localdb ) {
-			    			
-			    		ArrayList<String> result = db.PlayerTrack(playerORip, IPdisp, recursive, override, wildcard);
+			    		
+			    		ArrayList<String> result = db.PlayerTrack(playerORip, IPdisp, recursive, override, wildcard, geolocate);
 			    		String newplayer = null;
 			    		
 			    		if ( ( result == null ) && ( wildcard ) ) {
@@ -234,7 +235,7 @@ public class TrackExecutor implements CommandExecutor {
 					    			sender.sendMessage( ChatColor.GREEN + "[P-Tracker] No known accounts associated with \""+ ChatColor.UNDERLINE + newplayer + ChatColor.RESET + ChatColor.GREEN + "\"");
 								}
 								else {
-				    				result = db.PlayerTrack(newplayer, IPdisp, recursive, override, wildcard);
+				    				result = db.PlayerTrack(newplayer, IPdisp, recursive, override, wildcard, geolocate);
 								}
 			    				playerORip = newplayer;
 			    			}
@@ -247,11 +248,21 @@ public class TrackExecutor implements CommandExecutor {
 			    		if ( result != null) {
 				    		if ( result.size() > 0 ) {
 				    			int rsize = result.size();
-				    			sender.sendMessage(ChatColor.GREEN +"[P-Tracker] "+ rsize +" account(s) are associated with \""+ ChatColor.UNDERLINE + playerORip + ChatColor.RESET + ChatColor.GREEN +"\"" );
+				    			sender.sendMessage(ChatColor.GREEN +"[P-Tracker] "
+				    							+ ( (geolocate) ? (rsize - 1) : rsize )
+				    							+" account(s) are associated with \""+ ChatColor.UNDERLINE + playerORip + ChatColor.RESET + ChatColor.GREEN +"\"" );
+				    			
 					    		for ( int i = 0 ; i < rsize ; i++ ) {
+					    			String player = result.remove(0);
+					    			
+					    			if ( geolocate ) { // if this was a geolocation, then an IP is stuck in here hopefully at the top.
+					    				if ( player.matches("(?:\\d{1,3}\\.){3}\\d{1,3}") ) {
+					    					geoIP = player;
+					    					continue;
+					    				}
+					    			}
 					    			StringBuffer msg = new StringBuffer();
 					    			msg.append(ChatColor.DARK_GREEN +"    - ");
-					    			String player = result.remove(0);
 					    			msg.append( player );
 					    			if ( ( plugin.banlistEnabled ) && ( plugin.banlist.isBanned( player ) ) )
 					    				msg.append( ChatColor.BOLD + " (BANNED)");
@@ -298,19 +309,53 @@ public class TrackExecutor implements CommandExecutor {
 				    		}
 			    		}
 			    	}
-			    	/*if ( geolocate ) {
-			        	try {
-			        	    InetAddress addr = InetAddress.getByName("68.45.26.92");
+			    	if ( geolocate ) {
+			    		if ( geoIP != null ) {
+				        	try {
+				        	    InetAddress addr = InetAddress.getByName( geoIP );
 
-			        	    // Get the host name
-			        	    String hostname = addr.getHostName();
-			        	} catch (UnknownHostException e) {
-			        		sender.sendMessage("[P-Tracker] Geolocation failed: Unknown Host Exception!");
-			        		PlayerTracker.log.warning("[P-Tracker] Geolocation failed: Unknown Host Exception!");
-			        		if ( plugin.debug )
-			        			e.printStackTrace();
-			        	}
-			    	}*/
+				        	    // Get the host name
+				        	    String hostname = addr.getHostName();
+				        	    
+				        	    String url = "http://freegeoip.net/json/"+ addr.getHostAddress();
+								JSONObject json = JsonReader.readJsonFromUrl( url );
+								if ( !json.getString("city").isEmpty() ) {
+									sender.sendMessage(ChatColor.GREEN +"[P-Tracker] "+ChatColor.UNDERLINE+ hostname +ChatColor.RESET + ChatColor.GREEN +
+														" maps to "+ json.getString("city") +", "+
+														json.getString("region_name") +" ("+
+														json.getString("country_code") +")"
+									);
+								}
+								else if ( !json.getString("region_name").isEmpty() ) {
+									sender.sendMessage(ChatColor.GREEN +"[P-Tracker] "+ChatColor.UNDERLINE+ hostname +ChatColor.RESET + ChatColor.GREEN +
+														" maps to "+ json.getString("region_name") +" ("+
+														json.getString("country_code") +")"
+									);
+									
+								}
+								else if ( !json.getString("country_name").isEmpty() ) {
+									sender.sendMessage(ChatColor.GREEN +"[P-Tracker] "+ChatColor.UNDERLINE+ hostname +ChatColor.RESET + ChatColor.GREEN +
+											" maps to "+ json.getString("country_name") );
+								}
+								else {
+									sender.sendMessage(ChatColor.GREEN +"[P-Tracker] Geolocation failed: Geo-IP database returned invalid or inaccurate data.");
+								}
+
+				        	} catch (UnknownHostException e) {
+				        		sender.sendMessage(ChatColor.GREEN +"[P-Tracker] Geolocation failed: Unknown Host Exception!");
+				        		PlayerTracker.log.warning("[P-Tracker] Geolocation failed: Unknown Host Exception!");
+				        		if ( plugin.debug )
+				        			e.printStackTrace();
+				        	} catch (Exception e) {
+				        		sender.sendMessage(ChatColor.GREEN +"[P-Tracker] Geolocation failed: Geo-IP database failed to respond appropriately.");
+				        		if ( plugin.debug )
+				        			e.printStackTrace();
+				        	}
+			    		}
+			    		else {
+			    			sender.sendMessage(ChatColor.GREEN +"[P-Tracker] Geolocation failed: No IP on file for this Player.");
+			    		}
+			    	}
 				return;
     			}
     		};

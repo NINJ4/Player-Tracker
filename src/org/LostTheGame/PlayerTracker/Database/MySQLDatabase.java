@@ -113,7 +113,7 @@ public class MySQLDatabase extends Database {
     	return null;
     }
 
-    public ArrayList<String> PlayerTrack( String playername, boolean IPdisp, boolean recursive, boolean override, boolean wildcard ) {
+    public ArrayList<String> PlayerTrack( String playername, boolean IPdisp, boolean recursive, boolean override, boolean wildcard, boolean geolocate ) {
     	ArrayList<String> output = new ArrayList<String>();
     	
     	PreparedStatement ps = null;
@@ -129,8 +129,14 @@ public class MySQLDatabase extends Database {
 			
 			LinkedHashSet<String> ips = new LinkedHashSet<String>();
 			while( rs.next() ) {
-				if ( ( !plugin.untraceableIP.contains( rs.getString("ip") ) ) || ( override ) )
+				if ( ( !plugin.untraceableIP.contains( rs.getString("ip") ) ) || ( override ) ) {
 					ips.add( rs.getString("ip") );
+					
+					if ( geolocate ) {
+						output.add( rs.getString("ip") );
+						geolocate = false;
+					}
+				}
 				
 				//	output.addAll( IPRTrack( rs.getString("ip"), wildcard, IPdisp, recursive, override ) );
 			}
@@ -157,7 +163,7 @@ public class MySQLDatabase extends Database {
 						continue;
 					
 					names_spent.add( thisName );
-					ArrayList<String> trackThis = PlayerTrack( thisName, IPdisp, false, override, false );
+					ArrayList<String> trackThis = PlayerTrack( thisName, IPdisp, false, override, false, false );
 					if ( trackThis == null ) continue;
 					
 					if ( names.addAll( trackThis ) )
@@ -216,7 +222,7 @@ public class MySQLDatabase extends Database {
 						continue;
 					
 					names_spent.add( thisName );
-					if ( names.addAll( PlayerTrack( ( ( thisName.indexOf(" ") != -1 ) ? thisName.substring( 0, thisName.indexOf(" ") ) : thisName ), IPdisp, false, override, false ) ) )
+					if ( names.addAll( PlayerTrack( ( ( thisName.indexOf(" ") != -1 ) ? thisName.substring( 0, thisName.indexOf(" ") ) : thisName ), IPdisp, false, override, false, false ) ) )
 						names_itr = names.iterator();
 				}
 			}
@@ -266,7 +272,7 @@ public class MySQLDatabase extends Database {
 		}
     }
     public int AliasCount( String playername ) {
-    	ArrayList<String> getNames = PlayerTrack( playername, false, false, false, false );
+    	ArrayList<String> getNames = PlayerTrack( playername, false, false, false, false, false );
     	if ( getNames == null )
     		return 0;
     	

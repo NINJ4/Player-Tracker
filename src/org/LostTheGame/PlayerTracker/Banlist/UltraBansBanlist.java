@@ -13,9 +13,10 @@ public class UltraBansBanlist extends Banlist {
 	public HashSet<String> bannedPlayers = new HashSet<String>();
 	public Map<String, Long> tempBans = new HashMap<String, Long>();
 
-	public UltraBansBanlist( PlayerTracker instance ) {
+	public UltraBansBanlist( PlayerTracker instance, String type ) {
+			// type = UltraBan or UltraBanLite ONLY
 		this.plugin = instance;
-		this.banlistPlug = (UltraBan) plugin.getServer().getPluginManager().getPlugin("UltraBan");
+		this.banlistPlug = (UltraBan) plugin.getServer().getPluginManager().getPlugin(type);
 
 		this.bannedPlayers = banlistPlug.bannedPlayers;
 		this.tempBans = banlistPlug.tempBans;

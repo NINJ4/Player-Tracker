@@ -218,7 +218,12 @@ public class PlayerTracker extends JavaPlugin {
         else if ( this.getServer().getPluginManager().isPluginEnabled("UltraBan") ) {
         	log.info("[P-Tracker] UltraBans detected, attempting to use as banlist."); 
         	this.banlistEnabled = true;
-        	this.banlist = new UltraBansBanlist( this );
+        	this.banlist = new UltraBansBanlist( this, "UltraBan" );
+        }
+        else if ( this.getServer().getPluginManager().isPluginEnabled("UltraBanLite") ) {
+        	log.info("[P-Tracker] UltraBans-Lite detected, attempting to use as banlist."); 
+        	this.banlistEnabled = true;
+        	this.banlist = new UltraBansBanlist( this, "UltraBanLite" );
         }
         else if ( this.getServer().getPluginManager().isPluginEnabled("BanHammer") ) {
         	log.info("[P-Tracker] BanHammer detected, attempting to use as banlist."); 

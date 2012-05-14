@@ -1,6 +1,7 @@
 package org.LostTheGame.PlayerTracker.RemoteIntegration;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
@@ -102,14 +103,23 @@ public class glizerIntegration {
 
 		     return returnVal;
 		     
-	     } catch (Exception e) {
+	     } catch (IOException e) {
+	    	 PlayerTracker.log.warning("[P-Tracker] IOException: glizer appears to be unavailable. Disabling glizer integration...");
+	    	 plugin.glizer = false;
+	    	 plugin.glizerConn = null;
+	    	 if ( plugin.debug)
+	    		 e.printStackTrace();
+	    	 try {
+				return new JSONObject("{ \"data\": \"0\" }");
+			} catch (JSONException e1) {  }
+	    	 
+		} catch (Exception e) {
 			PlayerTracker.log.warning( "[P-Tracker] glizer Fetch Data Error" );
-			if ( plugin.debug == true ) {
+			if ( plugin.debug ) {
 				PlayerTracker.log.warning( "glizer request sent: "+data);
 				if ( result != null )
 					PlayerTracker.log.warning("glizer response: " +result);
-				if ( plugin.debug )
-					e.printStackTrace();
+				e.printStackTrace();
 			}
 		}
 		return null;

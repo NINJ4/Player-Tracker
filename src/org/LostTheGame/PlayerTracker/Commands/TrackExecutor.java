@@ -1,8 +1,11 @@
 package org.LostTheGame.PlayerTracker.Commands;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.LostTheGame.PlayerTracker.JsonReader;
 import org.LostTheGame.PlayerTracker.PlayerTracker;
 import org.LostTheGame.PlayerTracker.TrackerRunnables;
 import org.LostTheGame.PlayerTracker.Database.Database;
@@ -15,6 +18,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.json.JSONObject;
 
 public class TrackExecutor implements CommandExecutor {
 	private PlayerTracker plugin;
@@ -66,6 +70,7 @@ public class TrackExecutor implements CommandExecutor {
 		boolean wildcard = true;
 		boolean IPdisp = false;
 		boolean recursive = false;
+		boolean geolocate = false;
 		
 		if ( args.length > 0 ) {
 			
@@ -92,6 +97,10 @@ public class TrackExecutor implements CommandExecutor {
 					// display IPs
     				recursive = true;
     			}
+    			if ( args[i].contains("g") ) {
+					// display IPs
+    				geolocate = true;
+    			}
 
 	    		i++;
     		}
@@ -100,10 +109,10 @@ public class TrackExecutor implements CommandExecutor {
     		
     		if ( args[i].matches("(?:\\d{1,3}\\.){3}\\d{1,3}") ) { 
     				// If yes, this is an IP, otherwise treat as a playername.
-    			return IPTrack( args[i], sender, IPdisp, recursive, override );
+    			return IPTrack( args[i], sender, IPdisp, recursive, override, geolocate );
     		}
     		else if ( args[i].matches("^([a-zA-Z0-9_]){1,31}") ) {
-    			return PlayerTrack( args[i], sender, wildcard, IPdisp, recursive, override );
+    			return PlayerTrack( args[i], sender, wildcard, IPdisp, recursive, override, geolocate );
     		}
 		}
 		sender.sendMessage(ChatColor.GREEN + "[P-Tracker] Must supply a valid playername or IP address!");
@@ -112,7 +121,7 @@ public class TrackExecutor implements CommandExecutor {
 	}
 
 
-    private boolean IPTrack( String ip, CommandSender sender, boolean IPdisp, boolean recursive, boolean override ) {   
+    private boolean IPTrack( String ip, CommandSender sender, boolean IPdisp, boolean recursive, boolean override, boolean geolocate ) {   
     	
     	if ( ( !override ) && ( untraceableIP.contains( ip ) ) ) {
     		if ( localdb ) {
@@ -124,7 +133,7 @@ public class TrackExecutor implements CommandExecutor {
     		return true;
     	}
     	else {
-			TrackerRunnables ipTrack1 = new TrackerRunnables( ip, sender, IPdisp, recursive, override, false ) {
+			TrackerRunnables ipTrack1 = new TrackerRunnables( ip, sender, IPdisp, recursive, override, false, geolocate ) {
 				public void run() {
 					if ( localdb ) {
 			    		ArrayList<String> result = db.IPTrack( playerORip, IPdisp, recursive, override);
@@ -148,6 +157,48 @@ public class TrackExecutor implements CommandExecutor {
 			    	if ( mcbouncer ) {
 			    		//bouncerConn.IPTrack( IP );
 			    	}
+			    	if ( geolocate ) {
+			        	try {
+			        	    InetAddress addr = InetAddress.getByName( playerORip );
+
+			        	    // Get the host name
+			        	    String hostname = addr.getHostName();
+			        	    
+			        	    String url = "http://freegeoip.net/json/"+ addr.getHostAddress();
+							JSONObject json = JsonReader.readJsonFromUrl( url );
+							if ( json.has("city") ) {
+								sender.sendMessage(ChatColor.GREEN +"[P-Tracker] "+ hostname +
+													" maps to "+ json.getString("city") +", "+
+													json.getString("region_name") +" ("+
+													json.getString("country_code") +")"
+								);
+							}
+							else if ( json.has("region_name") ) {
+								sender.sendMessage(ChatColor.GREEN +"[P-Tracker] "+ hostname +
+													" maps to "+ json.getString("region_name") +" ("+
+													json.getString("country_code") +")"
+								);
+								
+							}
+							else if ( json.has("country_name") ) {
+								sender.sendMessage(ChatColor.GREEN +"[P-Tracker] "+ hostname +
+										" maps to "+ json.getString("country_name") );
+							}
+							else {
+								sender.sendMessage(ChatColor.GREEN +"[P-Tracker] Geolocation failed: Geo-IP database returned invalid or inaccurate data.");
+							}
+
+			        	} catch (UnknownHostException e) {
+			        		sender.sendMessage("[P-Tracker] Geolocation failed: Unknown Host Exception!");
+			        		PlayerTracker.log.warning("[P-Tracker] Geolocation failed: Unknown Host Exception!");
+			        		if ( plugin.debug )
+			        			e.printStackTrace();
+			        	} catch (Exception e) {
+			        		sender.sendMessage(ChatColor.GREEN +"[P-Tracker] Geolocation failed: Geo-IP database failed to respond appropriately.");
+			        		if ( plugin.debug )
+			        			e.printStackTrace();
+			        	}
+			    	}
 			    	return;
 				}
 			};
@@ -155,11 +206,10 @@ public class TrackExecutor implements CommandExecutor {
     	}
     	return true;
     }
-    private boolean PlayerTrack( String playername, CommandSender sender, boolean wildcard, boolean IPdisp, boolean recursive, boolean override ) {
+    private boolean PlayerTrack( String playername, CommandSender sender, boolean wildcard, boolean IPdisp, boolean recursive, boolean override, boolean geolocate ) {
 
     	
     	if ( ( !override ) && ( untraceable.contains( playername.toLowerCase() ) ) ) {
-PlayerTracker.log.warning("override:"+override);
     		if ( localdb ) {
 				sender.sendMessage(ChatColor.GREEN + "[P-Tracker] Player \""+ ChatColor.UNDERLINE + playername + ChatColor.RESET + ChatColor.GREEN + "\" is not associated with any known accounts.");
     		}
@@ -169,7 +219,7 @@ PlayerTracker.log.warning("override:"+override);
     		return true;
     	}
     	else {
-    		TrackerRunnables pTrack1 = new TrackerRunnables(playername, sender, IPdisp, recursive, override, wildcard) {
+    		TrackerRunnables pTrack1 = new TrackerRunnables(playername, sender, IPdisp, recursive, override, wildcard, geolocate) {
     			public void run() {
 			    	if ( localdb ) {
 			    			
@@ -248,6 +298,19 @@ PlayerTracker.log.warning("override:"+override);
 				    		}
 			    		}
 			    	}
+			    	/*if ( geolocate ) {
+			        	try {
+			        	    InetAddress addr = InetAddress.getByName("68.45.26.92");
+
+			        	    // Get the host name
+			        	    String hostname = addr.getHostName();
+			        	} catch (UnknownHostException e) {
+			        		sender.sendMessage("[P-Tracker] Geolocation failed: Unknown Host Exception!");
+			        		PlayerTracker.log.warning("[P-Tracker] Geolocation failed: Unknown Host Exception!");
+			        		if ( plugin.debug )
+			        			e.printStackTrace();
+			        	}
+			    	}*/
 				return;
     			}
     		};

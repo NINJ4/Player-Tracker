@@ -12,18 +12,20 @@ public abstract class TrackerRunnables implements Runnable {
 	protected boolean IPdisp;
 	protected boolean override;
 	protected boolean recursive;
+	protected boolean geolocate;
 	protected String ip;
 	protected String playername;
 	protected ArrayList<Player> notifyUs;
 	
 		// used for playerTrack
-	public TrackerRunnables( String playerORip, CommandSender sender, boolean IPdisp, boolean recursive, boolean override, boolean wildcard ) {
+	public TrackerRunnables( String playerORip, CommandSender sender, boolean IPdisp, boolean recursive, boolean override, boolean wildcard, boolean geolocate ) {
 		this.playerORip = playerORip;
 		this.IPdisp = IPdisp;
 		this.recursive = recursive;
 		this.override = override;
 		this.wildcard = wildcard;
 		this.sender = sender;
+		this.geolocate = geolocate;
 	}
 	
 		// used for addTracks:

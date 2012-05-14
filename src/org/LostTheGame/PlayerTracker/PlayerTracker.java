@@ -81,6 +81,7 @@ public class PlayerTracker extends JavaPlugin {
 	public static Logger log = Logger.getLogger("Minecraft");
 	
     public void onEnable(){ 
+    	
     	new File(maindir).mkdir();
     	setupConfig();
     	

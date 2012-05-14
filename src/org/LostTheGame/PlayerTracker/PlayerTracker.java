@@ -45,7 +45,7 @@ public class PlayerTracker extends JavaPlugin {
 	public FileConfiguration config;
 	public FileConfiguration ban_config;
 	private final LoginListenerTracker playerListener = new LoginListenerTracker(this);
-	public boolean debug = true;
+	public boolean debug = false;
 	protected final PlayerTracker plugin = this;
 	private String updateVer;
 
@@ -85,6 +85,7 @@ public class PlayerTracker extends JavaPlugin {
     	new File(maindir).mkdir();
     	setupConfig();
     	
+    	this.debug = config.getBoolean("debug", false);
     	this.updateVer = config.getString("alert-updates", "main");
     	this.localdb = config.getBoolean("local-db", true);
     	this.mysql = config.getBoolean("mysql-enable", false);

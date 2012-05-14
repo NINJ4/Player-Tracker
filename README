@@ -1,15 +1,16 @@
 Player-Tracker
-Keeps track of all your players using mySQL or SQLite, and optionally connects to the two largest global ban databases.
+Keeps track of all your players using mySQL or SQLite, and optionally connects to all the major global ban databases.
 
 Features:
-
     * Discover alternate accounts by IP-matching with a single command.
     * Keep track of all the IP addresses a Player connects from, for easier & more complete bans.
-    * Immediately identify alts of banned players.
+    * Immediately identify alts of banned players (Supports UltraBans, FigAdmin, BanHammer, Essentials, & CommandBook)..
     * Receive on-Join notifications about how many alts a player has been associated with.
-    * Easy setup: drag, drop, and go, or fine tune your configuration.
-    * Wildcard search matching, even with offline players!
-    * Don't want MCBans/MCBouncer managing your bans? This plugin can allow you to look up any player on these two systems without relying on their plugins!
+	* Easy-to-install Web-Interface! (Web-Tracker: https://github.com/NINJ4/Web-Tracker )
+	* Automatically trim database sizes to recent players!
+    * Easy setup: drag, drop, and go, or fine tune your configuration.NO configuration necessary!
+    * Wildcard search matching, even with offline players! 
+    * Don't want Minebans/glizer/MCBans/MCBouncer managing your bans? This plugin can allow you to look up any player on these two systems without relying on their plugins!
     * Hide certain players from lookups (Admins, VIPs, whatever) to avoid having their alts discovered!
     * Check out the screenshots page for examples! http://dev.bukkit.org/server-mods/player-tracker/pages/screenshots/
 
@@ -20,18 +21,18 @@ Installation:
 
 Commands:
 
-    * /track [-ai] <PLAYERNAME or IP ADDRESS or "stats">
-    Shows all the accounts associated with a given IP or player. (-i will display all associated IPs as well, -a disables wildcard searching) /track stats will show the number of tracked accounts & IPs.
+    * /track [-airg] <PLAYERNAME or IP ADDRESS or "stats">
+    Shows all the accounts associated with a given IP or player. (-i will display all associated IPs as well, -a disables wildcard searching, -r enables recursive searching (may take some time on some searches), and -g attempts to geolocate the player/IP) /track stats will show the number of tracked accounts & IPs.
 
 Permisson node: playertracker.track
 
-    * /hidetracks <PLAYERNAME or "list">
-    Adds a given player to the list of players immune to lookups, or lists hidden players.
+    * /hidetracks <PLAYERNAME/IP or "list">
+    Adds a given player or IP to the list of players immune to lookups, or lists hidden players.
 
 Permission node: playertracker.hidetracks
 
-    * /unhidetracks <PLAYERNAME>
-    Removes a given player from the list of players immune to lookups.
+    * /unhidetracks <PLAYERNAME/IP>
+    Removes a given player/IP from the list of players immune to lookups.
 
 Permission node: playertracker.hidetracks
 
@@ -40,13 +41,5 @@ Check out the Configuration Page. http://dev.bukkit.org/server-mods/player-track
 
 Permissions
 Check out the Permissions Page. http://dev.bukkit.org/server-mods/player-tracker/pages/permissions/
-
-Planned Improvements:
-
-    * Web-script (php) lookup for mySQL users.
-    * Hooks with FigAdmin, Banhammer, and Vanilla bans to show banned alt accounts.
-    * Automatic database size limiting.
-    * Approximate IP geolocation?
-    * Enable sending of global bans?
 
 Under development for SoftSlayer.com.

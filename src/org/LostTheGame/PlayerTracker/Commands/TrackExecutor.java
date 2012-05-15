@@ -83,6 +83,46 @@ public class TrackExecutor implements CommandExecutor {
 	    	else
 	    		override = true;
 	    	
+			if ( args[0].equalsIgnoreCase("help") ) {
+				sender.sendMessage(ChatColor.GREEN +"[P-Tracker] How to use Player-Tracker:");
+				sender.sendMessage(ChatColor.GREEN +"   "+ ChatColor.UNDERLINE +"/track [-agir] <PLAYERNAME> or <IP ADDRESS>");
+				sender.sendMessage(ChatColor.GREEN +"      - Shows all playernames associated with the given ");
+				sender.sendMessage(ChatColor.GREEN +"         playername or IP address.");
+				sender.sendMessage(ChatColor.GREEN +"      - Optionally include one or more of the search flags");
+				sender.sendMessage(ChatColor.GREEN +"        [-agir] to change the output effect:");
+				sender.sendMessage(ChatColor.GREEN +"         [-a] Disables wildcard searching of name fragments.");
+				sender.sendMessage(ChatColor.GREEN +"         [-g] Attempts to geolocate the chosen player by");
+				sender.sendMessage(ChatColor.GREEN +"               his/her most recent IP address.");
+				sender.sendMessage(ChatColor.GREEN +"         [-i] Displays all IP addresses associated with the");
+				sender.sendMessage(ChatColor.GREEN +"               associated playernames");
+				sender.sendMessage(ChatColor.GREEN +"         [-r] Enables recursive searching of all associated");
+				sender.sendMessage(ChatColor.GREEN +"               accounts (may take a long time for some searches).");
+				sender.sendMessage(ChatColor.GREEN +"      ex. "+ ChatColor.UNDERLINE +"/track -ig 127.0.1.1");
+				
+				boolean perm = false;
+				if ( sender instanceof Player ) {
+			    	Player player = (Player) sender;
+			    	if ( player.hasPermission("playertracker.hidetracks") ) 
+			    		perm = true;
+				}
+				else
+					perm = true;
+				
+				if ( perm ) {
+		    		sender.sendMessage(ChatColor.GREEN +"   "+ ChatColor.UNDERLINE +"/hidetracks [list] or [PLAYERNAME] or [IP ADDRESS]");
+		    		sender.sendMessage(ChatColor.GREEN +"      - Adds a player or IP address to the list of");
+		    		sender.sendMessage(ChatColor.GREEN +"         untraceable players/IPs.");
+		    		sender.sendMessage(ChatColor.GREEN +"      - When used as "+ ChatColor.UNDERLINE +"/hidetracks list"+ ChatColor.RESET + ChatColor.GREEN +", displays all");
+		    		sender.sendMessage(ChatColor.GREEN +"         untraceable IPs and Playernames.");
+		    		sender.sendMessage(ChatColor.GREEN +"   ex. "+ ChatColor.UNDERLINE +"/hidetracks Notch");
+		    		sender.sendMessage(ChatColor.GREEN +"   "+ ChatColor.UNDERLINE +"/unhidetracks [PLAYERNAME] or [IP ADDRESS]");
+		    		sender.sendMessage(ChatColor.GREEN +"      - Removes a player or IP address from the list of");
+		    		sender.sendMessage(ChatColor.GREEN +"         untraceable players/IPs.");
+		    		sender.sendMessage(ChatColor.GREEN +"   ex. "+ ChatColor.UNDERLINE +"/unhidetracks jeb_");
+				}
+	    		return true;
+			}
+	    	
     		if ( args[i].startsWith("-") ) {
     				// This is a flag!
     			if ( args[i].contains("a") ) {

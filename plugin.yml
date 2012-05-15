@@ -2,22 +2,22 @@ name: Player-Tracker
 main: org.LostTheGame.PlayerTracker.PlayerTracker
 author: NINJ4
 softdepend: [Essentials, CommandBook, FigAdmin, BanHammer, UltraBan, UltraBanLite]
-version: 1.2.5
+version: 1.3
 
 commands:
   track:
     description: Shows information about the target player.
-    usage: /track [-gair] <player|IP|stats>
+    usage: /track [-gair] <PLAYER|IP|stats>
     permission: playertracker.track
     permission-message: You don't have permission.
   hidetracks:
     description: Makes a player invisible to tracking.
-    usage: /hidetracks <player>
+    usage: /hidetracks <PLAYER|IP>
     permission: playertracker.hidetracks
     permission-message: You don't have permission.
   unhidetracks:
     description: Makes a hidden player visible to tracking again.
-    usage: /unhidetracks <player>
+    usage: /unhidetracks <PLAYER|IP>
     permission: playertracker.hidetracks
     permission-message: You don't have permission.
     

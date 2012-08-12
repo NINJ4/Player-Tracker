@@ -10,7 +10,7 @@ public class BanHammerBanlist extends Banlist {
 	
 	public BanHammerBanlist( PlayerTracker instance ) {
 		this.plugin = instance;
-		this.banhandler = ( (BanHammer) plugin.getServer().getPluginManager().getPlugin("BanHammer") ).getHandler( BanHammerBanlist.class );
+		this.banhandler = ( (BanHammer) plugin.getServer().getPluginManager().getPlugin("BanHammer") ).getHandler();
 	}
 	
 	public boolean isBanned( String playername ) {

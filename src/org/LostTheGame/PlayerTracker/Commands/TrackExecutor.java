@@ -67,6 +67,7 @@ public class TrackExecutor implements CommandExecutor {
     	
 
 		boolean override = false;
+		boolean canrecurse = false;
 		boolean wildcard = true;
 		boolean IPdisp = false;
 		boolean recursive = false;
@@ -79,9 +80,14 @@ public class TrackExecutor implements CommandExecutor {
 		    	if ( player.hasPermission("playertracker.hidetracks.override") ) {
 		    		override = true;
 		    	}
+		    	if ( player.hasPermission("playertracker.track.recursive") ) {
+		    		canrecurse = true;
+		    	}
 	    	}
-	    	else
+	    	else {
 	    		override = true;
+	    		canrecurse = true;
+	    	}
 	    	
 			if ( args[0].equalsIgnoreCase("help") ) {
 				sender.sendMessage(ChatColor.GREEN +"[P-Tracker] How to use Player-Tracker:");
@@ -95,8 +101,10 @@ public class TrackExecutor implements CommandExecutor {
 				sender.sendMessage(ChatColor.GREEN +"               his/her most recent IP address.");
 				sender.sendMessage(ChatColor.GREEN +"         [-i] Displays all IP addresses associated with the");
 				sender.sendMessage(ChatColor.GREEN +"               associated playernames");
-				sender.sendMessage(ChatColor.GREEN +"         [-r] Enables recursive searching of all associated");
-				sender.sendMessage(ChatColor.GREEN +"               accounts (may take a long time for some searches).");
+				if ( canrecurse ) {
+					sender.sendMessage(ChatColor.GREEN +"         [-r] Enables recursive searching of all associated");
+					sender.sendMessage(ChatColor.GREEN +"               accounts (may take a long time for some searches).");
+				}
 				sender.sendMessage(ChatColor.GREEN +"      ex. "+ ChatColor.UNDERLINE +"/track -ig 127.0.1.1");
 				
 				boolean perm = false;
@@ -133,12 +141,12 @@ public class TrackExecutor implements CommandExecutor {
 					// display IPs
     				IPdisp = true;
     			}
-    			if ( args[i].contains("r") ) {
-					// display IPs
+    			if ( args[i].contains("r") && ( canrecurse ) ) {
+					// enable recursive searching
     				recursive = true;
     			}
     			if ( args[i].contains("g") ) {
-					// display IPs
+					// display geolocation/hostmask
     				geolocate = true;
     			}
 

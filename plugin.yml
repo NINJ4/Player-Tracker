@@ -1,8 +1,8 @@
 name: Player-Tracker
 main: org.LostTheGame.PlayerTracker.PlayerTracker
 author: NINJ4
-softdepend: [Essentials, CommandBook, FigAdmin, BanHammer, UltraBan, UltraBanLite]
-version: 1.3
+softdepend: [Essentials, CommandBook, FigAdmin, BanHammer, Ultrabans, UltraBanLite]
+version: 1.3.1
 
 commands:
   track:
@@ -24,13 +24,18 @@ commands:
 permissions:    
     playertracker.*:
         description: Gives access to all Player-Tracker commands
+        default: false
         children:
             playertracker.track: true
             playertracker.onJoin: true
             playertracker.hidetracks: true
             playertracker.hidetracks.override: true
+            playertracker.track.recursive: true
     playertracker.track:
         description: Gives access to track players by name or IP
+        default: op
+    playertracker.track.recursive:
+        description: Gives players access to recursive tracker searches
         default: op
     playertracker.onJoin:
         description: Gives a short report on a player as they join

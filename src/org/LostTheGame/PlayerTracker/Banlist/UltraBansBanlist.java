@@ -6,17 +6,17 @@ import java.util.Map;
 
 import org.LostTheGame.PlayerTracker.PlayerTracker;
 
-import com.modcrafting.ultrabans.UltraBan;
+import com.modcrafting.ultrabans.Ultrabans;
 
 public class UltraBansBanlist extends Banlist {
-	private UltraBan banlistPlug;
+	private Ultrabans banlistPlug;
 	public HashSet<String> bannedPlayers = new HashSet<String>();
 	public Map<String, Long> tempBans = new HashMap<String, Long>();
 
 	public UltraBansBanlist( PlayerTracker instance, String type ) {
 			// type = UltraBan or UltraBanLite ONLY
 		this.plugin = instance;
-		this.banlistPlug = (UltraBan) plugin.getServer().getPluginManager().getPlugin(type);
+		this.banlistPlug = (Ultrabans) plugin.getServer().getPluginManager().getPlugin(type);
 
 		this.bannedPlayers = banlistPlug.bannedPlayers;
 		this.tempBans = banlistPlug.tempBans;

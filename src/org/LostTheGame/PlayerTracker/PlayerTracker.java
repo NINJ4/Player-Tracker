@@ -217,10 +217,10 @@ public class PlayerTracker extends JavaPlugin {
         	this.banlistEnabled = true;
         	this.banlist = new FigAdminBanlist( this );
         }
-        else if ( this.getServer().getPluginManager().isPluginEnabled("UltraBan") ) {
-        	log.info("[P-Tracker] UltraBans detected, attempting to use as banlist."); 
+        else if ( this.getServer().getPluginManager().isPluginEnabled("Ultrabans") ) {
+        	log.info("[P-Tracker] Ultrabans detected, attempting to use as banlist."); 
         	this.banlistEnabled = true;
-        	this.banlist = new UltraBansBanlist( this, "UltraBan" );
+        	this.banlist = new UltraBansBanlist( this, "Ultrabans" );
         }
         else if ( this.getServer().getPluginManager().isPluginEnabled("UltraBanLite") ) {
         	log.info("[P-Tracker] UltraBans-Lite detected, attempting to use as banlist."); 

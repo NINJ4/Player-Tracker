@@ -1,7 +1,7 @@
 package org.LostTheGame.PlayerTracker.Banlist;
 
 import name.richardson.james.bukkit.banhammer.BanHammer;
-import name.richardson.james.bukkit.banhammer.BanHandler;
+import name.richardson.james.bukkit.banhammer.api.BanHandler;
 
 import org.LostTheGame.PlayerTracker.PlayerTracker;
 
